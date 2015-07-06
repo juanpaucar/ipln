@@ -13,7 +13,7 @@ use warnings;
 use strict;
 binmode STDOUT, ":utf8";
 
-my @unneddedColors = ("#D7D7D7", "#004000","#9FB99F", "#A0B7A0", "#9CB49E");
+my @unneddedColors = ("#D7D7D7", "#004000","#9FB99F", "#A0B7A0", "#9CB49E", "#99B499", "#9B9BBF", "#B7C9B7");
 
 if (! defined $ARGV[0]){die "Ejemplo de uso:\n./paragraph.pl English-Spanish/html/do.html\n";}
 main($ARGV[0]);#Calling main procedure
@@ -87,10 +87,10 @@ sub insert_paragraph{
 
   for (my $i=0; $i<= $#htmlContentArr_ref; $i++){
     for (my $j=0; $j<= $#colorsToAdd; $j++) {
-      if (index($htmlContentArr_ref[$i], $colorsToAdd[$j]) != -1) {
+      if (index($htmlContentArr_ref[$i], $colorsToAdd[$j]) != -1 ) {
         push(@linesToConsider, $i);
         last;
-      }
+      } 
     }
   }
 
