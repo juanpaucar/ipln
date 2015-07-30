@@ -34,10 +34,10 @@ sub main{
   @htmlContentArr = nest_divs(\@htmlContentArr);
 
   # Printing the modified array
-  for (my $i=0; $i<= $#htmlContentArr; $i++){
-    my $line = $htmlContentArr[$i];
-    print "$line\n";
-  }
+  #for (my $i=0; $i<= $#htmlContentArr; $i++){
+    #my $line = $htmlContentArr[$i];
+    #print "$line\n";
+  #}
 
 
 
@@ -50,6 +50,15 @@ sub main{
     my $line_html_full = encode_entities($line_utf8);#Converting utf8 plain text into html encoding
     #print "$i\tfull\t$line_html_full\n\n";
   }
+
+  my $texto = join(" ", @htmlContentArr); 
+  &reconocer_entrada_textual($texto);
+  &reconocer_pronunciacion($texto);
+  &reconocer_observacion($texto);
+  &reconocer_contexto($texto);
+  &reconocer_etiqueta_morfologica($texto);
+  &reconocer_sub_contexto($texto);
+  &reconocer_ejemplo_esp($texto);
 
 }
 
@@ -177,11 +186,134 @@ sub nest_divs{
 sub ltrim { my $s = shift; $s =~ s/^\s+//; return $s }; #taken from http://perlmaven.com/trim
 
 sub openFile{
-    my ($fileName) = @_;
-    local $/;#read full file instead of only one line.
-    open(FILE, "<:utf8",$fileName) or die "Can't read file \"$fileName\" [$!]\n";
-    my $fileContent = <FILE>;
-    close (FILE);
-    
-    return $fileContent;
+  my ($fileName) = @_;
+  local $/;#read full file instead of only one line.
+  open(FILE, "<:utf8",$fileName) or die "Can't read file \"$fileName\" [$!]\n";
+  my $fileContent = <FILE>;
+  close (FILE);
+
+  return $fileContent;
 }
+
+sub reconocer_entrada_textual{
+
+  my ($texto) = @_;
+
+  #=pod
+  #Identificando una entrada:
+  #<font style="font-weight:bold;color:#0000FF;">
+  #de 
+  #</font>
+  #=cut
+
+  #my $entrada = $1 if ($texto =~ /<font/);
+  my $entrada= $1 if($texto =~/<font  style=\"font\-weight:bold;color:#0000FF;\">[\s]+([\/a-zA-Zàáäâéèëêíìïîóòöôúùüû]+)[\s]+<\/font>/);
+  #my $entrada = $1 if ($texto =~ /<font/);
+  #
+  #;\">[\s]+([a-zA-Zàáäâéèëêíìïîóòöôúùüû]+)[\s]+<\/font>
+
+  print "entrada= $entrada\n";
+
+
+}
+
+sub reconocer_pronunciacion{
+  #=pod
+  #Identificando la pronunciación:
+  #<font style=\"color:#CD4970">
+  #/de/
+  #</font>
+  #=cut
+  my ($texto) = @_;
+  my $pronunciacion = $1 if($texto =~/<font style=\"color:#CD4970;\">[\s]+([\/a-zA-Zàáäâéèëêíìïîóòöôúùüû]+)[\s]+<\/font>/);
+
+  print "pronunciacion=$pronunciacion\n";
+}
+
+sub reconocer_etiqueta_morfologica{
+  #=pod
+  #Identificando la etiqueta morfologica:
+  #<font style=\"font-weight:bold;color:#800040">
+  #prep
+  #</font>
+  #=cut
+  my ($texto) = @_;
+  #my $etiqueta = $1 if($texto =~/<font style=\"font-weight:bold;color:#800040;\">[\s]+([a-zA-Zàáäâéèëêíìïîóòöôúùüû]+)[\s]+<\/font>/);
+
+  #print "Etiqueta morfologica=$etiqueta\n";
+}
+
+sub reconocer_observacion{
+  #=pod
+  #Identificando la observacion:
+  #<font style="color:#CD4970;">
+  #/de/
+  #</font>
+  #</div>
+  #<div style="margin-left:30px;">
+  #<div>
+  #<font style="font-weight:bold;">
+  #de + el = 
+  #</font>
+  #=cut
+
+  my ($texto) = @_;
+  my $observacion = $1 if($texto =~/<font style=\"font-weight:bold;\">[\s]+([a-zA-Zàáäâéèëêíìïîóòöôúùüû\+\=\s]+)[\s]+<\/font>/);
+
+  print "Observacion= $observacion\n";
+}
+
+sub reconocer_contexto{
+#=pod
+  #Identificando el contexto:
+  #<(\font style=\"font style="color:#008000)>
+  #(gen, complemento de n)
+  #</font>
+#=cut
+  my ($texto) = @_;
+  my $contexto = $1 if($texto =~ /\(([^\)]+)/);
+
+  #=pod 
+  #<font style=\"font style="color:#008000;\">[\s]+([\(a-zA-Zàáäâéèëêíìïîóòöôúùüû\)]+)[\s]+<\/font>[^\)]/ 
+  #=cut
+
+  print "Contexto=$contexto\n";
+}
+
+
+
+
+sub reconocer_ejemplo_esp{
+  #=pod
+  #<font style="color:#0000FF;">
+  #la casa de Isabel/de mis padres/de los Alvarez 
+  #</font>
+  #=cut
+  my ($texto) = @_;
+  my $ejemplo_esp = $1 if($texto =~/<font style=\"color:#0000FF;\">([a-zA-Zàáäâéèëêíìïîóòöôúùüû\/\s]+)[\s]+<\/font>/);
+
+  print "EjemploEspaniol=$ejemplo_esp\n";
+
+
+}
+
+#=pod
+#my $ejemplo_fra = $1 if ($ejemplo =~/<font>([a-zA-Zàáäâéèëêíìïîóòöôúùüû\/\s]+)[\s]+<\/font>/);
+#{
+#print "EjemploFrances= $ejemplo_fra\n";
+#}
+
+#=cut
+
+sub  reconocer_sub_contexto{
+  #=pod
+  #Identificando el Subcontexto:
+  #<font style="color:#008000;">
+
+  #</font>
+  #=cut
+  my ($texto) = @_;
+  my $sub_contexto = $1 if($texto =~ /<font style="color:#008000;">[\s]+([a-zA-Zàáäâéèëêíìïîóòöôúùüû]+\+[a-zA-Zàáäâéèëêíìïîóòöôúùüû]+)[\s]+<\/font>/);
+
+  #print "SubContexto=$sub_contexto\n";
+} 
