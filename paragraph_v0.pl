@@ -15,17 +15,18 @@ binmode STDOUT, ":utf8";
 
 my @unneddedColors = ("#D7D7D7", "#004000","#9FB99F", "#A0B7A0", "#9CB49E", "#99B499", "#9B9BBF", "#B7C9B7");
 
-if (! defined $ARGV[0]){die "Ejemplo de uso:\n./paragraph.pl English-Spanish/html/do.html\n";}
+if (! defined $ARGV[0]){die "Ejemplo de uso:\n./paragraph.pl html/do.html\n";}
 main($ARGV[0]);#Calling main procedure
 
 
 sub main{
   my ($htmlFileName) = @_;
 
-  #Opening file and storing it into array
+  #Abrir el archivo y almacenarlo en un arreglo
   my $htmlContent = openFile($htmlFileName);
   my @htmlContentArr = split('\n', $htmlContent); 
 
+  #Formatear lo mas ocrrectamente posible el HTML
   @htmlContentArr = remove_paragraph(\@htmlContentArr);
   @htmlContentArr = insert_paragraph(\@htmlContentArr);
   @htmlContentArr = remove_empty_paragraphs(\@htmlContentArr);
@@ -33,33 +34,38 @@ sub main{
   @htmlContentArr = replace_paragraphs_for_div(\@htmlContentArr);
   @htmlContentArr = nest_divs(\@htmlContentArr);
 
-  # Printing the modified array
-  #for (my $i=0; $i<= $#htmlContentArr; $i++){
-    #my $line = $htmlContentArr[$i];
-    #print "$line\n";
-  #}
+  #Decodificar los HTML a UTF8
+  map { $_ = decode_entities($_) } @htmlContentArr;
 
-
-
-  # Printing the modified array using three encodings
-  for (my $i=0; $i<= $#htmlContentArr; $i++){
-    my $line_html_original = $htmlContentArr[$i];
-    #print "$i\torig\t$line_html_original\n";
-    my $line_utf8 = decode_entities($line_html_original);#Converting html encoding into utf8 plain text
-    #print "$i\tutf8\t$line_utf8\n";
-    my $line_html_full = encode_entities($line_utf8);#Converting utf8 plain text into html encoding
-    #print "$i\tfull\t$line_html_full\n\n";
-  }
-
+  #Crear un Archivo con el HTML formateado
   my $texto = join(" ", @htmlContentArr); 
-  &reconocer_entrada_textual($texto);
-  &reconocer_pronunciacion($texto);
-  &reconocer_observacion($texto);
-  &reconocer_contexto($texto);
-  &reconocer_etiqueta_morfologica($texto);
-  &reconocer_sub_contexto($texto);
-  &reconocer_ejemplo_esp($texto);
+  open(OUT_HTML, ">", "salida.html");
+  print OUT_HTML $texto;
+  close(OUT_HTML);
 
+  #Buscamos todas las expresiones regulares en el texto, las devolvemos como un arreglo
+  #y usando ese arreglo returnamos un arreglo con una tabla html, la unimos y alamacenamos
+  my $entrada_textual = join " ", &crear_tabla("Entrada Textual", &reconocer_entrada_textual($texto));
+  my $pronunciacion   = join " ", &crear_tabla("Pronunciacion", &reconocer_pronunciacion($texto));
+  my $observacion     = join " ", &crear_tabla("Observacion",  &reconocer_observacion($texto));
+  my $contexto        = join " ", &crear_tabla("Contexto", &reconocer_contexto($texto));
+  my $etiqueta        = join " ", &crear_tabla("Etiqueta Morfologica", &reconocer_etiqueta_morfologica($texto));
+  my $subcontexto     = join " ", &crear_tabla("Subcontexto", &reconocer_sub_contexto($texto));
+  my $ejemplo         = join " ", &crear_tabla("Ejemplo", &reconocer_ejemplo_esp($texto));
+
+
+  #Preparamos un HTML para la salida con las tablas de los elementos encontrados en el texto
+  # y lo imprimimos
+  my $html_head = "<html><head><title>Salida</title><style>table, th, td {border: 1px solid black;text-align: left;}</style></head><body>";
+  my $html_tail = "</body></html>";
+  my @bodyA = ($entrada_textual, $pronunciacion, $observacion, $contexto, $etiqueta, $subcontexto, $ejemplo);
+  my $body = join "<br><br>", @bodyA;
+  my $salida = join " ", ($html_head, $body, $html_tail);
+  open(OUT_TABLES, ">", "tablas.html");
+  print OUT_TABLES $salida;
+  close(OUT_TABLES);
+
+  print "Los archivos `salida.html` y `tablas.html` hasn sido generados en el directorio actual\n";
 }
 
 #This procedure removes unwanted paragraphs from the html input array.
@@ -196,51 +202,51 @@ sub openFile{
 }
 
 sub reconocer_entrada_textual{
-
-  my ($texto) = @_;
-
   #=pod
   #Identificando una entrada:
   #<font style="font-weight:bold;color:#0000FF;">
-  #de 
+  #  de 
   #</font>
   #=cut
 
-  #my $entrada = $1 if ($texto =~ /<font/);
-  my $entrada= $1 if($texto =~/<font  style=\"font\-weight:bold;color:#0000FF;\">[\s]+([\/a-zA-Zàáäâéèëêíìïîóòöôúùüû]+)[\s]+<\/font>/);
-  #my $entrada = $1 if ($texto =~ /<font/);
-  #
-  #;\">[\s]+([a-zA-Zàáäâéèëêíìïîóòöôúùüû]+)[\s]+<\/font>
+  my ($texto) = @_;
+  my @matches = ($texto =~ /<font  style=\"font\-weight:bold;color:#0000FF;\">[\s]+([\/a-zA-Zàáäâéèëêíìïîóòöôúùüû]+)[\s]+<\/font>/ );
 
-  print "entrada= $entrada\n";
-
-
+  #print "entrada\n";
+  #map { print "- $_\n" } @matches;
+  @matches;
 }
 
 sub reconocer_pronunciacion{
   #=pod
   #Identificando la pronunciación:
   #<font style=\"color:#CD4970">
-  #/de/
+  #  /de/
   #</font>
   #=cut
-  my ($texto) = @_;
-  my $pronunciacion = $1 if($texto =~/<font style=\"color:#CD4970;\">[\s]+([\/a-zA-Zàáäâéèëêíìïîóòöôúùüû]+)[\s]+<\/font>/);
 
-  print "pronunciacion=$pronunciacion\n";
+  my ($texto) = @_;
+  my @matches = ($texto =~ /<font style=\"color:#CD4970;\">[\s]+([\/a-zA-Zàáäâéèëêíìïîóòöôúùüû]+)[\s]+<\/font>/ );
+
+  #print "pronunciacion\n";
+  #map { print "- $_\n" } @matches;
+  @matches;
 }
 
 sub reconocer_etiqueta_morfologica{
   #=pod
   #Identificando la etiqueta morfologica:
   #<font style=\"font-weight:bold;color:#800040">
-  #prep
+  #  prep
   #</font>
   #=cut
-  my ($texto) = @_;
-  #my $etiqueta = $1 if($texto =~/<font style=\"font-weight:bold;color:#800040;\">[\s]+([a-zA-Zàáäâéèëêíìïîóòöôúùüû]+)[\s]+<\/font>/);
 
-  #print "Etiqueta morfologica=$etiqueta\n";
+  my ($texto) = @_;
+  my @matches = ($texto =~ /<font style=\"font-weight:bold;color:#800040;\">[\s]+([a-zA-Zàáäâéèëêíìïîóòöôúùüû]+)[\s]+<\/font>/ );
+
+  #print "Etiqueta morfologica\n";
+  #map { print "- $_\n" } @matches;
+  @matches;
 }
 
 sub reconocer_observacion{
@@ -258,26 +264,30 @@ sub reconocer_observacion{
   #=cut
 
   my ($texto) = @_;
-  my $observacion = $1 if($texto =~/<font style=\"font-weight:bold;\">[\s]+([a-zA-Zàáäâéèëêíìïîóòöôúùüû\+\=\s]+)[\s]+<\/font>/);
+  my @matches = ( $texto =~ /<font style=\"font-weight:bold;\">[\s]+([a-zA-Zàáäâéèëêíìïîóòöôúùüû\+\=\s]+)[\s]+<\/font>/ );
 
-  print "Observacion= $observacion\n";
+  #print "Observacion\n";
+  #map { print "- $_\n" } @matches;
+  @matches;
 }
 
 sub reconocer_contexto{
-#=pod
+  #=pod
   #Identificando el contexto:
-  #<(\font style=\"font style="color:#008000)>
-  #(gen, complemento de n)
-  #</font>
-#=cut
-  my ($texto) = @_;
-  my $contexto = $1 if($texto =~ /\(([^\)]+)/);
-
+    #<(\font style=\"font style="color:#008000)>
+      #(gen, complemento de n)
+    #</font>
+  #=cut
   #=pod 
   #<font style=\"font style="color:#008000;\">[\s]+([\(a-zA-Zàáäâéèëêíìïîóòöôúùüû\)]+)[\s]+<\/font>[^\)]/ 
   #=cut
 
-  print "Contexto=$contexto\n";
+  my ($texto) = @_;
+  my @matches = ( $texto =~ /\(([^\)]+)/ );
+
+  #print "Contexto\n";
+  #map { print "- $_\n" } @matches;
+  @matches;
 }
 
 
@@ -285,16 +295,17 @@ sub reconocer_contexto{
 
 sub reconocer_ejemplo_esp{
   #=pod
-  #<font style="color:#0000FF;">
-  #la casa de Isabel/de mis padres/de los Alvarez 
-  #</font>
+    #<font style="color:#0000FF;">
+      #la casa de Isabel/de mis padres/de los Alvarez 
+    #</font>
   #=cut
+
   my ($texto) = @_;
-  my $ejemplo_esp = $1 if($texto =~/<font style=\"color:#0000FF;\">([a-zA-Zàáäâéèëêíìïîóòöôúùüû\/\s]+)[\s]+<\/font>/);
+  my @matches = ( $texto =~/<font style=\"color:#0000FF;\">([a-zA-Zàáäâéèëêíìïîóòöôúùüû\/\s]+)[\s]+<\/font>/ );
 
-  print "EjemploEspaniol=$ejemplo_esp\n";
-
-
+  #print "EjemploEspaniol\n";
+  #map { print "- $_\n" } @matches;
+  @matches;
 }
 
 #=pod
@@ -313,7 +324,25 @@ sub  reconocer_sub_contexto{
   #</font>
   #=cut
   my ($texto) = @_;
-  my $sub_contexto = $1 if($texto =~ /<font style="color:#008000;">[\s]+([a-zA-Zàáäâéèëêíìïîóòöôúùüû]+\+[a-zA-Zàáäâéèëêíìïîóòöôúùüû]+)[\s]+<\/font>/);
+  my @matches = ( $texto =~ /<font style="color:#008000;">[\s]+([a-zA-Zàáäâéèëêíìïîóòöôúùüû]+\+[a-zA-Zàáäâéèëêíìïîóòöôúùüû]+)[\s]+<\/font>/ );
 
-  #print "SubContexto=$sub_contexto\n";
-} 
+  #print "SubContexto=\n";
+  #map { print "- $_\n" } @matches;
+  @matches;
+}
+
+sub crear_tabla{
+  my ($titulo, @elementos) = @_;
+  my @html_table = ();
+  push(@html_table, "<table>");
+  push(@html_table, "<tr>");
+  push(@html_table, "<th>");
+  push(@html_table, $titulo);
+  push(@html_table, "</th>");
+  push(@html_table, "</tr>");
+
+  map { push(@html_table, "<tr><td>$_</td></tr>") } @elementos;
+
+  push(@html_table, "</table>");
+  @html_table;
+}
