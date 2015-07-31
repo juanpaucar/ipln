@@ -210,7 +210,7 @@ sub reconocer_entrada_textual{
   #=cut
 
   my ($texto) = @_;
-  my @matches = ($texto =~ /<font  style=\"font\-weight:bold;color:#0000FF;\">[\s]+([\/a-zA-Zàáäâéèëêíìïîóòöôúùüû]+)[\s]+<\/font>/ );
+  my @matches = ($texto =~ /<font  style=\"font\-weight:bold;color:#0000FF;\">[\s]+([\/a-zA-Zàáäâéèëêíìïîóòöôúùüû]+)[\s]+<\/font>/g );
 
   #print "entrada\n";
   #map { print "- $_\n" } @matches;
@@ -226,7 +226,7 @@ sub reconocer_pronunciacion{
   #=cut
 
   my ($texto) = @_;
-  my @matches = ($texto =~ /<font style=\"color:#CD4970;\">[\s]+([\/a-zA-Zàáäâéèëêíìïîóòöôúùüû]+)[\s]+<\/font>/ );
+  my @matches = ($texto =~ /<font style=\"color:#CD4970;\">[\s]+([\/a-zA-Zàáäâéèëêíìïîóòöôúùüû]+)[\s]+<\/font>/g );
 
   #print "pronunciacion\n";
   #map { print "- $_\n" } @matches;
@@ -242,7 +242,7 @@ sub reconocer_etiqueta_morfologica{
   #=cut
 
   my ($texto) = @_;
-  my @matches = ($texto =~ /<font style=\"font-weight:bold;color:#800040;\">[\s]+([a-zA-Zàáäâéèëêíìïîóòöôúùüû]+)[\s]+<\/font>/ );
+  my @matches = ($texto =~ /<font style=\"font-weight:bold;color:#800040;\">[\s]+([a-zA-Zàáäâéèëêíìïîóòöôúùüû]+)[\s]+<\/font>/g );
 
   #print "Etiqueta morfologica\n";
   #map { print "- $_\n" } @matches;
@@ -264,7 +264,7 @@ sub reconocer_observacion{
   #=cut
 
   my ($texto) = @_;
-  my @matches = ( $texto =~ /<font style=\"font-weight:bold;\">[\s]+([a-zA-Zàáäâéèëêíìïîóòöôúùüû\+\=\s]+)[\s]+<\/font>/ );
+  my @matches = ( $texto =~ /<font style=\"font-weight:bold;\">[\s]+([a-zA-Zàáäâéèëêíìïîóòöôúùüû\+\=\s]+)[\s]+<\/font>/g );
 
   #print "Observacion\n";
   #map { print "- $_\n" } @matches;
@@ -283,7 +283,7 @@ sub reconocer_contexto{
   #=cut
 
   my ($texto) = @_;
-  my @matches = ( $texto =~ /\(([^\)]+)/ );
+  my @matches = ( $texto =~ /\(([^\)]+)/g );
 
   #print "Contexto\n";
   #map { print "- $_\n" } @matches;
@@ -301,7 +301,7 @@ sub reconocer_ejemplo_esp{
   #=cut
 
   my ($texto) = @_;
-  my @matches = ( $texto =~/<font style=\"color:#0000FF;\">([a-zA-Zàáäâéèëêíìïîóòöôúùüû\/\s]+)[\s]+<\/font>/ );
+  my @matches = ( $texto =~/<font style=\"color:#0000FF;\">([a-zA-Zàáäâéèëêíìïîóòöôúùüû\/\s]+)[\s]+<\/font>/g );
 
   #print "EjemploEspaniol\n";
   #map { print "- $_\n" } @matches;
@@ -324,7 +324,7 @@ sub  reconocer_sub_contexto{
   #</font>
   #=cut
   my ($texto) = @_;
-  my @matches = ( $texto =~ /<font style="color:#008000;">[\s]+([a-zA-Zàáäâéèëêíìïîóòöôúùüû]+\+[a-zA-Zàáäâéèëêíìïîóòöôúùüû]+)[\s]+<\/font>/ );
+  my @matches = ( $texto =~ /<font style="color:#008000;">[\s]+([a-zA-Zàáäâéèëêíìïîóòöôúùüû]+\+[a-zA-Zàáäâéèëêíìïîóòöôúùüû]+)[\s]+<\/font>/g );
 
   #print "SubContexto=\n";
   #map { print "- $_\n" } @matches;
