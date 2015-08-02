@@ -32,7 +32,7 @@ sub main{
   @htmlContentArr = remove_empty_paragraphs(\@htmlContentArr);
   @htmlContentArr = add_missing_parenthesis(\@htmlContentArr);
   @htmlContentArr = replace_paragraphs_for_div(\@htmlContentArr);
-  @htmlContentArr = nest_divs(\@htmlContentArr);
+  @htmlContentArr = divide_speechs(\@htmlContentArr);
 
   #Decodificar los HTML a UTF8
   map { $_ = decode_entities($_) } @htmlContentArr;
@@ -118,6 +118,7 @@ sub insert_paragraph{
   return @htmlContentArr_ref;
 }
 
+#This function removes paragraphs with no content
 sub remove_empty_paragraphs{
   my ($htmlContentArr) = @_;
   my @htmlContentArr_ref   =  @{$htmlContentArr};
@@ -137,6 +138,7 @@ sub remove_empty_paragraphs{
   return @htmlContentArr_ref;
 }
 
+#This function adds an openning paranthesis to some lines that had extra chars instead of `(`
 sub add_missing_parenthesis{
   my ($htmlContentArr) = @_;
   my @htmlContentArr_ref   =  @{$htmlContentArr};
@@ -154,6 +156,7 @@ sub add_missing_parenthesis{
   return @htmlContentArr_ref
 }
 
+#We replace <p> with <div> since is incorrect to have nested paragraphs
 sub replace_paragraphs_for_div{
   my ($htmlContentArr) = @_;
   my @htmlContentArr_ref   =  @{$htmlContentArr};
@@ -171,20 +174,20 @@ sub replace_paragraphs_for_div{
   return @htmlContentArr_ref;
 }
 
-sub nest_divs{
+sub divide_speechs{
   my ($htmlContentArr) = @_;
   my @htmlContentArr_ref   =  @{$htmlContentArr};
-  my $openDiv;
-
-  for (my $i=0; $i<= $#htmlContentArr_ref; $i++){
-    if (index($htmlContentArr_ref[$i], "#CD4970") != -1) {
-      $openDiv = $i;
-      last;
-    }
+  my @linesToConsider = ();
+  
+  for my $i (0..$#htmlContentArr_ref) {
+    push @linesToConsider, $i if ($htmlContentArr_ref[$i] =~ /#800040;/);
   }
 
-  splice @htmlContentArr_ref, $openDiv + 4, 0, "<div style=\"margin-left:30px;\">";
-  splice @htmlContentArr_ref, $#htmlContentArr_ref - 2, 0, "</div>";
+  for my $i (0..$#linesToConsider) {
+    my $line = $linesToConsider[$i]+(2*$i);
+    splice @htmlContentArr_ref, $line, 0, "<div>";
+    splice @htmlContentArr_ref, $line, 0, "</div>";
+  }
 
   return @htmlContentArr_ref;
 }
