@@ -13,7 +13,17 @@ use warnings;
 use strict;
 binmode STDOUT, ":utf8";
 
-my @unneddedColors = ("#D7D7D7", "#004000","#9FB99F", "#A0B7A0", "#9CB49E", "#99B499", "#9B9BBF", "#B7C9B7", "#9DADA3", "#9CBD9C", "#9EB0A0", "#000058", "#95B395", "#A1B4A1", "#9DB79D", "#9AAF9A");
+my @unneddedColors = ("#D7D7D7", "#004000", "#9FB99F", "#A0B7A0",
+                      "#9CB49E", "#99B499", "#9B9BBF", "#B7C9B7",
+                      "#9DADA3", "#9CBD9C", "#9EB0A0", "#000058",
+                      "#95B395", "#A1B4A1", "#9DB79D", "#9AAF9A",
+                      "#00008C", "#A2B3A2", "#A6B9A6", "#9494C3",
+                      "#9BB39B", "#9E9ECC", "#000075", "#9FA9A8",
+                      "#000034", "#A1B2AB", "#A2BBA2", "#8F8FB4",
+                      "#809B80", "#B1B1DA", "#9FB6A1", "#A8A8DC",
+                      "#005600", "#A7BAA7", "#8C8CBA", "#9EABA4",
+                      "#000080"
+                     );
 
 if (! defined $ARGV[0]){die "Ejemplo de uso:\n./paragraph.pl html/do.html\n";}
 main($ARGV[0]);#Calling main procedure
