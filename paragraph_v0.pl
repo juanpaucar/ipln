@@ -13,7 +13,7 @@ use warnings;
 use strict;
 binmode STDOUT, ":utf8";
 
-my @unneddedColors = ("#D7D7D7", "#004000","#9FB99F", "#A0B7A0", "#9CB49E", "#99B499", "#9B9BBF", "#B7C9B7");
+my @unneddedColors = ("#D7D7D7", "#004000","#9FB99F", "#A0B7A0", "#9CB49E", "#99B499", "#9B9BBF", "#B7C9B7", "#9DADA3");
 
 if (! defined $ARGV[0]){die "Ejemplo de uso:\n./paragraph.pl html/do.html\n";}
 main($ARGV[0]);#Calling main procedure
@@ -33,6 +33,7 @@ sub main{
   @htmlContentArr = add_missing_parenthesis(\@htmlContentArr);
   @htmlContentArr = replace_paragraphs_for_div(\@htmlContentArr);
   @htmlContentArr = divide_speechs(\@htmlContentArr);
+  @htmlContentArr = remove_unnedeed_parts(\@htmlContentArr);
 
   #Decodificar los HTML a UTF8
   map { $_ = decode_entities($_) } @htmlContentArr;
@@ -180,7 +181,7 @@ sub divide_speechs{
   my @linesToConsider = ();
   
   for my $i (0..$#htmlContentArr_ref) {
-    push @linesToConsider, $i if ($htmlContentArr_ref[$i] =~ /#800040;/);
+    push @linesToConsider, $i if ($htmlContentArr_ref[$i] =~ /#800040;/ and not $htmlContentArr_ref[$i] =~ /italic/);
   }
 
   for my $i (0..$#linesToConsider) {
@@ -189,6 +190,20 @@ sub divide_speechs{
     splice @htmlContentArr_ref, $line, 0, "</div>";
   }
 
+  return @htmlContentArr_ref;
+}
+
+sub remove_unnedeed_parts {
+  my ($htmlContentArr) = @_;
+  my @htmlContentArr_ref   =  @{$htmlContentArr};
+  for my $i (0..$#htmlContentArr_ref) {
+    if ($htmlContentArr_ref[$i] =~ /font\-weight:bold;text\-decoration:underline;color:#0000FF;/) {
+      if (index($htmlContentArr_ref[$i+5], "<font style=\"font-weight:bold;\">") != -1) {
+        splice @htmlContentArr_ref, $i+3, 5;
+        last;
+      }
+    }
+  }
   return @htmlContentArr_ref;
 }
 
