@@ -38,7 +38,7 @@ sub main{
   map { $_ = decode_entities($_) } @htmlContentArr;
 
   #Crear un Archivo con el HTML formateado
-  my $texto = join(" ", @htmlContentArr); 
+  my $texto = join("\n", @htmlContentArr); 
   open(OUT_HTML, ">", "salida.html");
   print OUT_HTML $texto;
   close(OUT_HTML);
@@ -189,7 +189,10 @@ sub nest_divs{
   return @htmlContentArr_ref;
 }
 
-sub ltrim { my $s = shift; $s =~ s/^\s+//; return $s }; #taken from http://perlmaven.com/trim
+#taken from http://perlmaven.com/trim
+sub ltrim { my $s = shift; $s =~ s/^\s+//;       return $s };
+sub rtrim { my $s = shift; $s =~ s/\s+$//;       return $s };
+sub  trim { my $s = shift; $s =~ s/^\s+|\s+$//g; return $s };
 
 sub openFile{
   my ($fileName) = @_;
@@ -210,8 +213,9 @@ sub reconocer_entrada_textual{
   #=cut
 
   my ($texto) = @_;
-  my @matches = ($texto =~ /<font  style=\"font\-weight:bold;color:#0000FF;\">[\s]+([\/a-zA-Zàáäâéèëêíìïîóòöôúùüû]+)[\s]+<\/font>/g );
+  my @matches = ($texto =~ /<font style=\"font\-weight:bold;color:#0000FF;\">([^<]+)/g );
 
+  map { $_ = trim($_) } @matches;
   #print "entrada\n";
   #map { print "- $_\n" } @matches;
   @matches;
@@ -283,8 +287,9 @@ sub reconocer_contexto{
   #=cut
 
   my ($texto) = @_;
-  my @matches = ( $texto =~ /\(([^\)]+)/g );
+  my @matches = ( $texto =~ /\<div>[\n ]+<font style=\"color:#008000;\">([^<]+)/g );
 
+  map { $_ = trim ($_) } @matches;
   #print "Contexto\n";
   #map { print "- $_\n" } @matches;
   @matches;
