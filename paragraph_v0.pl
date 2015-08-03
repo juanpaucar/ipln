@@ -23,7 +23,13 @@ my @unneddedColors = ("#D7D7D7", "#004000", "#9FB99F", "#A0B7A0",
                       "#809B80", "#B1B1DA", "#9FB6A1", "#A8A8DC",
                       "#005600", "#A7BAA7", "#8C8CBA", "#9EABA4",
                       "#000080", "#000059", "#A4A4CA", "#9191D6",
-                      "#0000BD"
+                      "#0000BD", "#9FAE9F", "#98BA98", "#004500",
+                      "#9595D0", "#032C03", "#96B596", "#9F9FCB",
+                      "#AAB5AA", "#004400", "#9898CD", "#9AB89B",
+                      "#9CB89C", "#9FB69F", "#9B9BC5", "#A1B7A1",
+                      "#9898D4", "#005400", "#A0BBA0", "#8686A3",
+                      "#002900", "#A2B3A7", "#A8A8D3", "#A8A8D3",
+                      "#9EB99E", "#B8C9B8", "#9393DF"
                      );
 
 if (! defined $ARGV[0]){die "Ejemplo de uso:\n./paragraph.pl html/\n";}
@@ -261,10 +267,11 @@ sub remove_extra_information {
   my $dictionary = "Dictionary Plus";
   my $harper = "HarperCollins";
   my $soft = "Softissimo";
+  my $paper = "Paperless";
 
   for my $i (0..$#htmlContentArr_ref) {
     my $line = $htmlContentArr_ref[$i];
-    push(@linesToConsider, $i) if ($line =~ /($lexibase|$dictionary|$harper|$soft)/i);
+    push(@linesToConsider, $i) if ($line =~ /($lexibase|$dictionary|$harper|$soft|$paper)/i);
   }
 
   for my $i (0..$#linesToConsider) {
