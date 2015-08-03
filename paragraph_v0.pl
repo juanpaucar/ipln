@@ -126,15 +126,14 @@ sub process_html{
   print "Los archivos han sido creados en salida/$htmlFileName y tablas/$htmlFileName\n";
 }
 
-#This procedure removes unwanted paragraphs from the html input array.
-#The removal is based on a visual comparison between the html input file and the corresponding pdf file (reference).
+#Este precedimiento remueve parrafos inncesarios en el html de entrada
 sub remove_paragraph{
   my ($htmlContentArr) = @_;
   my @htmlContentArr_ref   =  @{$htmlContentArr};
 
   my @linesToDelete = ();
 
-  #Elimino partes innecesarias
+  #Agrego las finlas con los parrafos innecesarios
   for (my $i=0; $i<= $#htmlContentArr_ref; $i++){
     for (my $j=0; $j<= $#unneddedColors; $j++) {
       if (index($htmlContentArr_ref[$i], $unneddedColors[$j]) != -1) {
@@ -143,6 +142,7 @@ sub remove_paragraph{
       }
     }
   }
+  #Elimino las lineas innecesarias
   for (my $i=0; $i<= $#linesToDelete; $i++){
     splice @htmlContentArr_ref, ($linesToDelete[$i]-(3*$i)), 3;
   }
@@ -150,15 +150,14 @@ sub remove_paragraph{
   return @htmlContentArr_ref;
 }
 
-#This procedure inserts new paragraphs into the html input array.
-#The insertion is based on a visual comparison between the html input file and the corresponding pdf file (reference).
+#Este procedimiento inserta nuevos parrafos donde son necesarios
 sub insert_paragraph{
   my ($htmlContentArr) = @_;
   my @htmlContentArr_ref   =  @{$htmlContentArr};
   my @colorsToAdd = ("#0000FF", "#008000");
   my @linesToConsider = ();
 
-  #busco las secciones con los colores
+  #Busco las secciones con los colores que se necesitan
   for (my $i=0; $i<= $#htmlContentArr_ref; $i++){
     for (my $j=0; $j<= $#colorsToAdd; $j++) {
       if (index($htmlContentArr_ref[$i], $colorsToAdd[$j]) != -1 ) {
@@ -168,6 +167,8 @@ sub insert_paragraph{
     }
   }
 
+  
+  #Agrego las etiquetas de los parrafos
   for (my $i=0; $i<= $#linesToConsider; $i++) {
     my $line = $linesToConsider[$i]+(2*$i);
     splice @htmlContentArr_ref, $line, 0, "<p>";
@@ -177,18 +178,20 @@ sub insert_paragraph{
   return @htmlContentArr_ref;
 }
 
-#This function removes paragraphs with no content
+#Esta funcion reemueve parrafos vacios
 sub remove_empty_paragraphs{
   my ($htmlContentArr) = @_;
   my @htmlContentArr_ref   =  @{$htmlContentArr};
   my @linesToConsider = ();
 
+  #Busco parrafos vacios
   for (my $i=0; $i<= $#htmlContentArr_ref; $i++){
     if (index($htmlContentArr_ref[$i], "<p>") >= 0 and index($htmlContentArr_ref[$i+1], "</p>") >= 0) {
       push(@linesToConsider, $i);
     }
   }
 
+  #Eliminamos las etiquetas de apertura y cerrado de parrafos vacios
   for (my $i=0; $i<= $#linesToConsider; $i++) {
     my $line = $linesToConsider[$i]-(2*$i);
     splice @htmlContentArr_ref, $line, 2;
@@ -197,11 +200,13 @@ sub remove_empty_paragraphs{
   return @htmlContentArr_ref;
 }
 
-#This function adds an openning paranthesis to some lines that had extra chars instead of `(`
+#Esta funcion agrega un paratensis de apertura en vez de caracters extras
 sub add_missing_parenthesis{
   my ($htmlContentArr) = @_;
   my @htmlContentArr_ref   =  @{$htmlContentArr};
   my @linesToConsider = ();
+
+  #Buscamos lugares donde se necesite un parentesis de apertura
   for (my $i=0; $i<= $#htmlContentArr_ref; $i++){
     if (index($htmlContentArr_ref[$i], "#008000") >= 0 and index($htmlContentArr_ref[$i+1], ")") >= 0 and index($htmlContentArr_ref[$i+1], "(") < 0 and index($htmlContentArr_ref[$i+1], "AM)") <0) {
       push(@linesToConsider, $i+1);
@@ -209,13 +214,14 @@ sub add_missing_parenthesis{
     }
   }
 
+  #Agregamos el parantesis y le hacemos un trim a la palabras antes de agregarle el parentesis de apertura
   for (my $i=0; $i<= $#linesToConsider; $i++) {
     $htmlContentArr_ref[$linesToConsider[$i]] = "(" . ltrim($htmlContentArr_ref[$linesToConsider[$i]]);
   }
   return @htmlContentArr_ref
 }
 
-#We replace <p> with <div> since is incorrect to have nested paragraphs
+#Reemplazamos las etiquetas de <p> por <div> ya que no es valido tener parrafos anidados
 sub replace_paragraphs_for_div{
   my ($htmlContentArr) = @_;
   my @htmlContentArr_ref   =  @{$htmlContentArr};
@@ -225,6 +231,8 @@ sub replace_paragraphs_for_div{
   my $parO = "<p>";
   my $parC = "</p>";
 
+
+  #Reemplazmos buscando en cada linea
   for (my $i=0; $i<= $#htmlContentArr_ref; $i++){
     $htmlContentArr_ref[$i] =~ s/$parO/$divO/g;
     $htmlContentArr_ref[$i] =~ s/$parC/$divC/g;
@@ -233,15 +241,18 @@ sub replace_paragraphs_for_div{
   return @htmlContentArr_ref;
 }
 
+#Corregimos la indentacion de las etiquetas morfologicas agregando las etiquetas que se necesitan
 sub divide_speechs{
   my ($htmlContentArr) = @_;
   my @htmlContentArr_ref   =  @{$htmlContentArr};
   my @linesToConsider = ();
 
+  #Buscamos las lineas que contienen lo que buscamos
   for my $i (0..$#htmlContentArr_ref) {
     push @linesToConsider, $i if ($htmlContentArr_ref[$i] =~ /#800040;/ and not $htmlContentArr_ref[$i] =~ /italic/);
   }
 
+  #Agregamos las etiquetas que se necesitan para que sea un html correcto
   for my $i (0..$#linesToConsider) {
     my $line = $linesToConsider[$i]+(2*$i);
     splice @htmlContentArr_ref, $line, 0, "<div>";
@@ -251,9 +262,12 @@ sub divide_speechs{
   return @htmlContentArr_ref;
 }
 
+#Removemos lineas que estan con etiquetas vacias
 sub remove_unnedeed_parts {
   my ($htmlContentArr) = @_;
   my @htmlContentArr_ref   =  @{$htmlContentArr};
+
+  #Buscamos las lineas con las etiquetas vacias y las eliminamos
   for my $i (0..$#htmlContentArr_ref) {
     if ($htmlContentArr_ref[$i] =~ /font\-weight:bold;text\-decoration:underline;color:#0000FF;/) {
       if (index($htmlContentArr_ref[$i+5], "<font style=\"font-weight:bold;\">") != -1) {
@@ -265,10 +279,13 @@ sub remove_unnedeed_parts {
   return @htmlContentArr_ref;
 }
 
+#Removemos las lineas con informacion extra que ya no necesitamos
 sub remove_extra_information {
   my ($htmlContentArr) = @_;
   my @htmlContentArr_ref   =  @{$htmlContentArr};
   my @linesToConsider = ();
+
+  #Estas son las palabras claves que se encuentran en esas lineas
   my $lexibase = "Lexibase";
   my $dictionary = "Dictionary Plus";
   my $harper = "HarperCollins";
@@ -581,7 +598,7 @@ sub reconocer_etiqueta_morfologica{
   #=cut
 
   my ($texto) = @_;
-  my @matches = ($texto =~ /<font style=\"font-weight:bold;color:#800040;\">[\s]+([a-zA-Zàáäâéèëêíìïîóòöôúùüû]+)[\s]+<\/font>/g );
+  my @matches = ($texto =~ /<font style=\"font-weight:bold;color:#800040;\">([^<]+)/g );
   @matches;
 }
 
