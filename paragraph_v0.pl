@@ -349,7 +349,7 @@ sub reparar_flechas{
   my @linesToConsider = ();
 
   for my $i (0..$#htmlContentArr_ref){
-    if ($htmlContentArr_ref[$i] =~ /<font style="color:#0000FF;">/ and $htmlContentArr_ref[$i+1] =~ /\-&gt;/ and $htmlContentArr_ref[$i+5] =~ /<font style=\"font\-weight:bold;text\-decoration:underline;color:#0000FF;\">/) {
+    if ($htmlContentArr_ref[$i] =~ /<font style="color:#0000FF;">/ and $htmlContentArr_ref[$i+1] =~ /\-&gt;/ and $htmlContentArr_ref[$i+5] =~ /<font style=\"(font\-weight:bold;)?text\-decoration:underline;color:#0000FF;\">/) {
       push @linesToConsider, $i+3;
     }
   }
