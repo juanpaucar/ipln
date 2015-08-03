@@ -22,7 +22,7 @@ my @unneddedColors = ("#D7D7D7", "#004000", "#9FB99F", "#A0B7A0",
                       "#000034", "#A1B2AB", "#A2BBA2", "#8F8FB4",
                       "#809B80", "#B1B1DA", "#9FB6A1", "#A8A8DC",
                       "#005600", "#A7BAA7", "#8C8CBA", "#9EABA4",
-                      "#000080"
+                      "#000080", "#000059"
                      );
 
 if (! defined $ARGV[0]){die "Ejemplo de uso:\n./paragraph.pl html/do.html\n";}
@@ -70,6 +70,7 @@ sub process_html{
   @htmlContentArr = replace_paragraphs_for_div(\@htmlContentArr);
   @htmlContentArr = divide_speechs(\@htmlContentArr);
   @htmlContentArr = remove_unnedeed_parts(\@htmlContentArr);
+  @htmlContentArr = remove_extra_information(\@htmlContentArr);
 
   #Decodificar los HTML a UTF8
   map { $_ = decode_entities($_) } @htmlContentArr;
@@ -217,7 +218,7 @@ sub divide_speechs{
   my ($htmlContentArr) = @_;
   my @htmlContentArr_ref   =  @{$htmlContentArr};
   my @linesToConsider = ();
-  
+
   for my $i (0..$#htmlContentArr_ref) {
     push @linesToConsider, $i if ($htmlContentArr_ref[$i] =~ /#800040;/ and not $htmlContentArr_ref[$i] =~ /italic/);
   }
@@ -242,6 +243,27 @@ sub remove_unnedeed_parts {
       }
     }
   }
+  return @htmlContentArr_ref;
+}
+
+sub remove_extra_information {
+  my ($htmlContentArr) = @_;
+  my @htmlContentArr_ref   =  @{$htmlContentArr};
+  my @linesToConsider = ();
+  my $lexibase = "Lexibase";
+  my $dictionary = "Dictionary Plus";
+  my $harper = "HarperCollins";
+  my $soft = "Softissimo";
+
+  for my $i (0..$#htmlContentArr_ref) {
+    my $line = $htmlContentArr_ref[$i];
+    push(@linesToConsider, $i) if ($line =~ /($lexibase|$dictionary|$harper|$soft)/i);
+  }
+
+  for my $i (0..$#linesToConsider) {
+    splice @htmlContentArr_ref, $linesToConsider[$i]-$i, 1;
+  }
+
   return @htmlContentArr_ref;
 }
 
