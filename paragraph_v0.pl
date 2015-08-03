@@ -75,7 +75,7 @@ sub process_html{
   @htmlContentArr = remove_empty_tags(\@htmlContentArr);
 
   #Decodificar los HTML a UTF8
-  map { $_ = decode_entities($_) } @htmlContentArr;
+  #map { $_ = decode_entities($_) } @htmlContentArr;
 
   #Crear un Archivo con el HTML formateado
   my $nuevo_html = join("/", ("salida", $htmlFileName));
@@ -288,6 +288,7 @@ sub remove_empty_tags {
   my @linesToConsider = ();
   my @tags = ("font", "div");
 
+  #removes what is inside the tags list
   for my $j (0..$#tags) {
     my $tag = $tags[$j];
     for (my $i=0; $i<= $#htmlContentArr_ref; $i++){
@@ -296,10 +297,29 @@ sub remove_empty_tags {
         $i++;
       }
     }
-
     for (my $i=0; $i<= $#linesToConsider; $i++) {
       my $line = $linesToConsider[$i]-(2*$i);
       splice @htmlContentArr_ref, $line, 2;
+    }
+    @linesToConsider = ();
+  }
+
+  #removes tags with nothing but spaces between them
+  for my $j (0..$#tags) {
+    my $tag = $tags[$j];
+    for my $i (0..$#htmlContentArr_ref) {
+      if ($htmlContentArr_ref[$i] =~ /<$tag.*>/ and $htmlContentArr_ref[$i+1] =~ /^\s+$/ and $htmlContentArr_ref[$i+2] =~ /<\/$tag>/) {
+        push(@linesToConsider, $i);
+        $i+=2;
+      }
+    }
+    for (my $i=0; $i<= $#linesToConsider; $i++) {
+      my $line = $linesToConsider[$i]-(3*$i);
+      print "1. $htmlContentArr_ref[$line -(3*$i)]\n";
+      print "2. $htmlContentArr_ref[$line -(3*$i) +1]\n";
+      print "3. $htmlContentArr_ref[$line -(3*$i)+2]\n\n";
+
+      splice @htmlContentArr_ref, $line, 3;
     }
     @linesToConsider = ();
   }
