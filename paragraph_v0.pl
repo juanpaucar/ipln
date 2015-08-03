@@ -76,6 +76,7 @@ sub process_html{
   @htmlContentArr = remove_empty_tags(\@htmlContentArr);
   @htmlContentArr = reparar_flechas(\@htmlContentArr);
   @htmlContentArr = remover_saltos_innecesarios(\@htmlContentArr);
+  @htmlContentArr = reparar_parentesis(\@htmlContentArr);
 
   #Crear un Archivo con el HTML formateado
   my $nuevo_html = join("/", ("salida", $htmlFileName));
@@ -378,7 +379,7 @@ sub remover_saltos_innecesarios{
     splice @htmlContentArr_ref, $line, 2;
   }
 
-  #saltos innecesarios entre bloques de similar font
+  #saltos innecesarios entre bloques de similar tag de font
   @linesToConsider = ();
   for my $i (0..$#htmlContentArr_ref){
     if ($htmlContentArr_ref[$i] =~ /<font style=\"color:#808080;\">/ ) {
@@ -393,6 +394,40 @@ sub remover_saltos_innecesarios{
   for (my $i=0; $i<= $#linesToConsider; $i++) {
     my $line = $linesToConsider[$i]-(2*$i);
     splice @htmlContentArr_ref, $line, 2;
+  }
+
+  return @htmlContentArr_ref;
+}
+
+sub reparar_parentesis{
+  my ($htmlContentArr) = @_;
+  my @htmlContentArr_ref   =  @{$htmlContentArr};
+  my @linesToConsider = ();
+
+  #Almacenamos todas las lineaas que contienen divs innecesarios
+  for my $i (0..$#htmlContentArr_ref) {
+    if (index($htmlContentArr_ref[$i], "(") !=-1 and index($htmlContentArr_ref[$i], ")") <0) {
+      while (index($htmlContentArr_ref[$i], ")") <0) {
+        push(@linesToConsider, $i) if ($htmlContentArr_ref[$i] =~ /div/);
+        $i++;
+      }
+    }
+  }
+
+  #Eliminamos las lineas marcadas
+  for (my $i=0; $i<= $#linesToConsider; $i++) {
+    my $line = $linesToConsider[$i]-$i;
+    splice @htmlContentArr_ref, $line, 1;
+  }
+
+  #Eliminamos lineas con mas de un parentesis de apertura `(`
+  for my $i (0..$#htmlContentArr_ref) {
+    if (index($htmlContentArr_ref[$i], "(") !=-1 and index($htmlContentArr_ref[$i], ")") <0) {
+      while (index($htmlContentArr_ref[$i], ")") <0) { $i++; }
+      if ($htmlContentArr_ref[$i] =~ /\([\s]*\)/) {
+        $htmlContentArr_ref[$i] =~ s/\(//g;
+      }
+    }
   }
 
   return @htmlContentArr_ref;
