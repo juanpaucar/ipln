@@ -22,7 +22,7 @@ my @unneddedColors = ("#D7D7D7", "#004000", "#9FB99F", "#A0B7A0",
                       "#000034", "#A1B2AB", "#A2BBA2", "#8F8FB4",
                       "#809B80", "#B1B1DA", "#9FB6A1", "#A8A8DC",
                       "#005600", "#A7BAA7", "#8C8CBA", "#9EABA4",
-                      "#000080", "#000059"
+                      "#000080", "#000059", "#A4A4CA"
                      );
 
 if (! defined $ARGV[0]){die "Ejemplo de uso:\n./paragraph.pl html/\n";}
@@ -74,9 +74,7 @@ sub process_html{
   @htmlContentArr = remove_extra_chars(\@htmlContentArr);
   @htmlContentArr = remove_empty_tags(\@htmlContentArr);
   @htmlContentArr = reparar_flechas(\@htmlContentArr);
-
-  #Decodificar los HTML a UTF8
-  #map { $_ = decode_entities($_) } @htmlContentArr;
+  @htmlContentArr = remover_saltos_innecesarios(\@htmlContentArr);
 
   #Crear un Archivo con el HTML formateado
   my $nuevo_html = join("/", ("salida", $htmlFileName));
@@ -84,6 +82,9 @@ sub process_html{
   open(OUT_HTML, ">", $nuevo_html);
   print OUT_HTML $texto;
   close(OUT_HTML);
+
+  #Decodificar los HTML a UTF8
+  map { $_ = decode_entities($_) } @htmlContentArr;
 
   #Buscamos todas las expresiones regulares en el texto, las devolvemos como un arreglo
   #y usando ese arreglo returnamos un arreglo con una tabla html, la unimos y alamacenamos
@@ -348,6 +349,43 @@ sub reparar_flechas{
   for my $i (0..$#htmlContentArr_ref){
     if ($htmlContentArr_ref[$i] =~ /<font style="color:#0000FF;">/ and $htmlContentArr_ref[$i+1] =~ /\-&gt;/ and $htmlContentArr_ref[$i+5] =~ /<font style=\"font\-weight:bold;text\-decoration:underline;color:#0000FF;\">/) {
       push @linesToConsider, $i+3;
+    }
+  }
+
+  for (my $i=0; $i<= $#linesToConsider; $i++) {
+    my $line = $linesToConsider[$i]-(2*$i);
+    splice @htmlContentArr_ref, $line, 2;
+  }
+
+  return @htmlContentArr_ref;
+}
+
+sub remover_saltos_innecesarios{
+  my ($htmlContentArr) = @_;
+  my @htmlContentArr_ref   =  @{$htmlContentArr};
+  my @linesToConsider = ();
+
+  #saltos innecesarios para los bloques con color #800040
+  for my $i (0..$#htmlContentArr_ref){
+    if ($htmlContentArr_ref[$i] =~ /<font style=\"font\-style:italic;color:#800040;\"/ and $htmlContentArr_ref[$i+5] =~ /<font>/) {
+      push @linesToConsider, $i+3;
+    }
+  }
+
+  for (my $i=0; $i<= $#linesToConsider; $i++) {
+    my $line = $linesToConsider[$i]-(2*$i);
+    splice @htmlContentArr_ref, $line, 2;
+  }
+
+  #saltos innecesarios entre bloques de similar font
+  @linesToConsider = ();
+  for my $i (0..$#htmlContentArr_ref){
+    if ($htmlContentArr_ref[$i] =~ /<font style=\"color:#808080;\">/ ) {
+      my $tag_previo = trim($htmlContentArr_ref[$i-3]);
+      my $tag_posterior = trim($htmlContentArr_ref[$i+5]);
+      if ($tag_previo eq $tag_posterior) {
+        push @linesToConsider, $i+3;
+      }
     }
   }
 
