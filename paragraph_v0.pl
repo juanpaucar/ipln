@@ -73,6 +73,7 @@ sub process_html{
   @htmlContentArr = remove_extra_information(\@htmlContentArr);
   @htmlContentArr = remove_extra_chars(\@htmlContentArr);
   @htmlContentArr = remove_empty_tags(\@htmlContentArr);
+  @htmlContentArr = reparar_flechas(\@htmlContentArr);
 
   #Decodificar los HTML a UTF8
   #map { $_ = decode_entities($_) } @htmlContentArr;
@@ -186,7 +187,7 @@ sub add_missing_parenthesis{
   my @htmlContentArr_ref   =  @{$htmlContentArr};
   my @linesToConsider = ();
   for (my $i=0; $i<= $#htmlContentArr_ref; $i++){
-    if (index($htmlContentArr_ref[$i], "#008000") >= 0 and index($htmlContentArr_ref[$i+1], ")") >= 0 and index($htmlContentArr_ref[$i+1], "(") < 0) {
+    if (index($htmlContentArr_ref[$i], "#008000") >= 0 and index($htmlContentArr_ref[$i+1], ")") >= 0 and index($htmlContentArr_ref[$i+1], "(") < 0 and index($htmlContentArr_ref[$i+1], "AM)") <0) {
       push(@linesToConsider, $i+1);
       $i+=2;
     }
@@ -315,13 +316,44 @@ sub remove_empty_tags {
     }
     for (my $i=0; $i<= $#linesToConsider; $i++) {
       my $line = $linesToConsider[$i]-(3*$i);
-      print "1. $htmlContentArr_ref[$line -(3*$i)]\n";
-      print "2. $htmlContentArr_ref[$line -(3*$i) +1]\n";
-      print "3. $htmlContentArr_ref[$line -(3*$i)+2]\n\n";
-
       splice @htmlContentArr_ref, $line, 3;
     }
     @linesToConsider = ();
+  }
+
+   #removes what is inside the tags list
+  for my $j (0..$#tags) {
+    my $tag = $tags[$j];
+    for (my $i=0; $i<= $#htmlContentArr_ref; $i++){
+      if ($htmlContentArr_ref[$i] =~ /^[\s]*<$tag>[\s]*$/ and $htmlContentArr_ref[$i+1] =~ /^[\s]*<\/$tag>[\s]*$/) {
+        push(@linesToConsider, $i);
+        $i++;
+      }
+    }
+    for (my $i=0; $i<= $#linesToConsider; $i++) {
+      my $line = $linesToConsider[$i]-(2*$i);
+      splice @htmlContentArr_ref, $line, 2;
+    }
+    @linesToConsider = ();
+  }
+
+ return @htmlContentArr_ref;
+}
+
+sub reparar_flechas{
+  my ($htmlContentArr) = @_;
+  my @htmlContentArr_ref   =  @{$htmlContentArr};
+  my @linesToConsider = ();
+
+  for my $i (0..$#htmlContentArr_ref){
+    if ($htmlContentArr_ref[$i] =~ /<font style="color:#0000FF;">/ and $htmlContentArr_ref[$i+1] =~ /\-&gt;/ and $htmlContentArr_ref[$i+5] =~ /<font style=\"font\-weight:bold;text\-decoration:underline;color:#0000FF;\">/) {
+      push @linesToConsider, $i+3;
+    }
+  }
+
+  for (my $i=0; $i<= $#linesToConsider; $i++) {
+    my $line = $linesToConsider[$i]-(2*$i);
+    splice @htmlContentArr_ref, $line, 2;
   }
 
   return @htmlContentArr_ref;
