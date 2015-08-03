@@ -13,6 +13,7 @@ use warnings;
 use strict;
 binmode STDOUT, ":utf8";
 
+my $lenguaje;
 #Lista con los colores de restos del parseo del pdf a html
 my @unneddedColors = ("#D7D7D7", "#004000", "#9FB99F", "#A0B7A0",
                       "#9CB49E", "#99B499", "#9B9BBF", "#B7C9B7",
@@ -33,13 +34,14 @@ my @unneddedColors = ("#D7D7D7", "#004000", "#9FB99F", "#A0B7A0",
                       "#9EB99E", "#B8C9B8", "#9393DF"
                      );
 
-if (! defined $ARGV[0]){die "Ejemplo de uso:\n./paragraph.pl html/\n";}
+if (! defined $ARGV[0]){die "Ejemplo de uso:\n./paragraph.pl html/ (esp|frc)\n";}
 main($ARGV[0]);#Calling main procedure
 
 sub main{
-  my ($directory) = @_;
+  my ($directory, $lang) = @_;
   my @files = ();
 
+  $lenguaje = $lang;
   #Buscamos cada archivo en el directorio que recibimos de argumento
   opendir (DIR, $directory) or die $!;
   while (my $file = readdir(DIR)) {
@@ -104,7 +106,8 @@ sub process_html{
   my $observacion     = join " ", &crear_tabla("Observacion",  &reconocer_observacion($texto));
   my $etiqueta        = join " ", &crear_tabla("Etiqueta Morfologica", &reconocer_etiqueta_morfologica($texto));
   my $subcontexto     = join " ", &crear_tabla("Subcontexto", &reconocer_sub_contexto($texto));
-  my $ejemplo         = join " ", &crear_tabla("Ejemplo", &reconocer_ejemplo_esp($texto));
+  my $ejemplo_esp     = join " ", &crear_tabla("Ejemplo Espaniol", &reconocer_ejemplo_esp($texto));
+  my $ejemplo_fra     = join " ", &crear_tabla("Ejemplo Frances", &reconocer_ejemplo_fra($texto));
   my $palabra_comp    = join " ", &crear_tabla("Palabras compuestas", &reconocer_palabra_compuesta($texto));
 
   my @contexto_arr = &reconocer_contexto($texto);
@@ -115,7 +118,7 @@ sub process_html{
   # y lo imprimimos
   my $html_head = "<html><head><title>Salida</title><style>table, th, td {border: 1px solid black;text-align: left;}</style></head><body>";
   my $html_tail = "</body></html>";
-  my @bodyA = ($entrada_textual, $pronunciacion, $observacion, $contexto, $patron_g, $etiqueta, $subcontexto, $ejemplo, $palabra_comp);
+  my @bodyA = ($entrada_textual, $pronunciacion, $observacion, $contexto, $patron_g, $etiqueta, $subcontexto, $palabra_comp, $ejemplo_esp, $ejemplo_fra);
   my $body = join "<br><br>", @bodyA;
   my $salida = join " ", ($html_head, $body, $html_tail);
   my $tabla_salida = join "/", ("tablas", $htmlFileName);
@@ -676,6 +679,18 @@ sub reconocer_ejemplo_esp{
 
   my ($texto) = @_;
   my @matches = ( $texto =~/<font style=\"color:#0000FF;\">([a-zA-Zàáäâéèëêíìïîóòöôúùüû\/\s]+)[\s]+<\/font>/g );
+  @matches;
+}
+
+sub reconocer_ejemplo_fra{
+  #=pod
+  #<font style="color:#0000FF;">
+  #la casa de Isabel/de mis padres/de los Alvarez 
+  #</font>
+  #=cut
+
+  my ($texto) = @_;
+  my @matches = ( $texto =~/<font>([^<]+)<\/font>/g );
   @matches;
 }
 
