@@ -71,6 +71,7 @@ sub process_html{
   @htmlContentArr = divide_speechs(\@htmlContentArr);
   @htmlContentArr = remove_unnedeed_parts(\@htmlContentArr);
   @htmlContentArr = remove_extra_information(\@htmlContentArr);
+  @htmlContentArr = remove_extra_chars(\@htmlContentArr);
 
   #Decodificar los HTML a UTF8
   map { $_ = decode_entities($_) } @htmlContentArr;
@@ -262,6 +263,18 @@ sub remove_extra_information {
 
   for my $i (0..$#linesToConsider) {
     splice @htmlContentArr_ref, $linesToConsider[$i]-$i, 1;
+  }
+
+  return @htmlContentArr_ref;
+}
+
+sub remove_extra_chars {
+  my ($htmlContentArr) = @_;
+  my @htmlContentArr_ref   =  @{$htmlContentArr};
+  my $unwanted1 = "11 &nbsp;&nbsp;&nbsp;";
+  
+  for my $i (0..$#htmlContentArr_ref) {
+    $htmlContentArr_ref[$i] =~ s/$unwanted1//g;
   }
 
   return @htmlContentArr_ref;
