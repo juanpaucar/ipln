@@ -77,6 +77,7 @@ sub process_html{
   @htmlContentArr = reparar_flechas(\@htmlContentArr);
   @htmlContentArr = remover_saltos_innecesarios(\@htmlContentArr);
   @htmlContentArr = reparar_parentesis(\@htmlContentArr);
+  @htmlContentArr = alinear_parentesis(\@htmlContentArr);
 
   #Crear un Archivo con el HTML formateado
   my $nuevo_html = join("/", ("salida", $htmlFileName));
@@ -359,6 +360,19 @@ sub reparar_flechas{
     splice @htmlContentArr_ref, $line, 2;
   }
 
+  #Ponemos juntos los elementos que estan con flechas
+  @linesToConsider = ();
+  for my $i (0..$#htmlContentArr_ref) {
+    if ($htmlContentArr_ref[$i] =~ /#0000FF/ and $htmlContentArr_ref[$i+1] =~ /\-&gt;/ and $htmlContentArr_ref[$i+9] =~ /\-&gt;/) {
+      push @linesToConsider, $i+6;
+    }
+  }
+
+  for (my $i=0; $i<= $#linesToConsider; $i++) {
+    my $line = $linesToConsider[$i]-(2*$i);
+    splice @htmlContentArr_ref, $line, 2;
+  }
+
   return @htmlContentArr_ref;
 }
 
@@ -428,6 +442,25 @@ sub reparar_parentesis{
         $htmlContentArr_ref[$i] =~ s/\(//g;
       }
     }
+  }
+
+  return @htmlContentArr_ref;
+}
+
+sub alinear_parentesis{
+  my ($htmlContentArr) = @_;
+  my @htmlContentArr_ref   =  @{$htmlContentArr};
+  my @linesToConsider = ();
+
+  for my $i (0..$#htmlContentArr_ref) {
+    if ($htmlContentArr_ref[$i] =~ /color:#008000/ and $htmlContentArr_ref[$i+1] =~ /\(/ and $htmlContentArr_ref[$i-5] =~ /(bold|#808080)/ and not $htmlContentArr_ref[$i-5] =~ /(#0000FF|#800040)/) {
+      push @linesToConsider, $i-2;
+    }
+  }
+
+  for (my $i=0; $i<= $#linesToConsider; $i++) {
+    my $line = $linesToConsider[$i]-(2*$i);
+    splice @htmlContentArr_ref, $line, 2;
   }
 
   return @htmlContentArr_ref;
