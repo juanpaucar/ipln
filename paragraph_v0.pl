@@ -293,11 +293,13 @@ sub remove_extra_information {
   my $paper = "Paperless";
   my $year = "1999";
 
+  #Buscamos las palabras clave en cada linea
   for my $i (0..$#htmlContentArr_ref) {
     my $line = $htmlContentArr_ref[$i];
     push(@linesToConsider, $i) if ($line =~ /($lexibase|$dictionary|$harper|$soft|$paper|$year)/i);
   }
 
+  #Eliminamos esa linea
   for my $i (0..$#linesToConsider) {
     splice @htmlContentArr_ref, $linesToConsider[$i]-$i, 1;
   }
@@ -305,11 +307,13 @@ sub remove_extra_information {
   return @htmlContentArr_ref;
 }
 
+#Removemos lineas con caracteres de espacio y un patrin recurrente que causan un mal formateo
 sub remove_extra_chars {
   my ($htmlContentArr) = @_;
   my @htmlContentArr_ref   =  @{$htmlContentArr};
   my $unwanted1 = "11 &nbsp;&nbsp;&nbsp;";
   
+  #Buscamos y reemplamos con vacio el patron
   for my $i (0..$#htmlContentArr_ref) {
     $htmlContentArr_ref[$i] =~ s/$unwanted1//g;
   }
@@ -317,22 +321,24 @@ sub remove_extra_chars {
   return @htmlContentArr_ref;
 }
 
-#Removes empty tags within the @tags array
+#Removemos laos tags vacios que esten en el arreglo @tags
 sub remove_empty_tags {
   my ($htmlContentArr) = @_;
   my @htmlContentArr_ref   =  @{$htmlContentArr};
   my @linesToConsider = ();
   my @tags = ("font", "div");
 
-  #removes what is inside the tags list
+  #Primer lazo es por cada clase de etqieuta vacia a borrar
   for my $j (0..$#tags) {
     my $tag = $tags[$j];
+    #Busca la un par de etiquetas vacias de la etiquetas actual y almacena los indices
     for (my $i=0; $i<= $#htmlContentArr_ref; $i++){
       if ($htmlContentArr_ref[$i] =~ /^[\s]*<$tag>[\s]*$/ and $htmlContentArr_ref[$i+1] =~ /^[\s]*<\/$tag>[\s]*$/) {
         push(@linesToConsider, $i);
         $i++;
       }
     }
+    #Elimina las etiquetas vacias de la etiqeuta actual
     for (my $i=0; $i<= $#linesToConsider; $i++) {
       my $line = $linesToConsider[$i]-(2*$i);
       splice @htmlContentArr_ref, $line, 2;
@@ -340,15 +346,18 @@ sub remove_empty_tags {
     @linesToConsider = ();
   }
 
-  #removes tags with nothing but spaces between them
+  #Remueve los tags que solo contienen espacios entre ellos
+  ##Primer lazo para tag de la lista
   for my $j (0..$#tags) {
     my $tag = $tags[$j];
+    #Busca los tags con espacio de la etiqueta actual
     for my $i (0..$#htmlContentArr_ref) {
       if ($htmlContentArr_ref[$i] =~ /<$tag.*>/ and $htmlContentArr_ref[$i+1] =~ /^\s+$/ and $htmlContentArr_ref[$i+2] =~ /<\/$tag>/) {
         push(@linesToConsider, $i);
         $i+=2;
       }
     }
+    #Eliminamos la etiquetas con espacios entre ellos
     for (my $i=0; $i<= $#linesToConsider; $i++) {
       my $line = $linesToConsider[$i]-(3*$i);
       splice @htmlContentArr_ref, $line, 3;
@@ -356,7 +365,7 @@ sub remove_empty_tags {
     @linesToConsider = ();
   }
 
-   #removes what is inside the tags list
+  #Una vez mas remueve lo que esta en la lista de etiquetas, por nuevas etiquetas vacias
   for my $j (0..$#tags) {
     my $tag = $tags[$j];
     for (my $i=0; $i<= $#htmlContentArr_ref; $i++){
@@ -372,11 +381,12 @@ sub remove_empty_tags {
     @linesToConsider = ();
   }
 
-  #Eliminar lineas que solo tienen `&nbsp`
+  #Busca las lineas que solo tienen `&nbsp`
   @linesToConsider = ();
   for my $i (0..$#htmlContentArr_ref) {
     push(@linesToConsider, $i-1) if ($htmlContentArr_ref[$i] =~ /^[\s]*(&nbsp;)+[\s]*$/);
   }
+  #Elimina las lineas que se econtraron
   for (my $i=0; $i<= $#linesToConsider; $i++) {
     my $line = $linesToConsider[$i]-(3*$i);
     splice @htmlContentArr_ref, $line, 3;
@@ -385,17 +395,20 @@ sub remove_empty_tags {
  return @htmlContentArr_ref;
 }
 
+#Arreglamos como se muestran algunas entradas con `->`
 sub reparar_flechas{
   my ($htmlContentArr) = @_;
   my @htmlContentArr_ref   =  @{$htmlContentArr};
   my @linesToConsider = ();
 
+  #Buscamos las entradas con flechas y divs innecesarios
   for my $i (0..$#htmlContentArr_ref){
     if ($htmlContentArr_ref[$i] =~ /<font style="color:#0000FF;">/ and $htmlContentArr_ref[$i+1] =~ /\-&gt;/ and $htmlContentArr_ref[$i+5] =~ /<font style=\"(font\-weight:bold;)?text\-decoration:underline;color:#0000FF;\">/) {
       push @linesToConsider, $i+3;
     }
   }
 
+  #Eliminamos los divs innecesarios
   for (my $i=0; $i<= $#linesToConsider; $i++) {
     my $line = $linesToConsider[$i]-(2*$i);
     splice @htmlContentArr_ref, $line, 2;
@@ -409,6 +422,7 @@ sub reparar_flechas{
     }
   }
 
+  #Eliminamos los divs que no dejan que las entradas esten con flechas
   for (my $i=0; $i<= $#linesToConsider; $i++) {
     my $line = $linesToConsider[$i]-(2*$i);
     splice @htmlContentArr_ref, $line, 2;
@@ -417,6 +431,7 @@ sub reparar_flechas{
   return @htmlContentArr_ref;
 }
 
+#Removemos los saltos entre lineas innecesarios
 sub remover_saltos_innecesarios{
   my ($htmlContentArr) = @_;
   my @htmlContentArr_ref   =  @{$htmlContentArr};
@@ -429,6 +444,7 @@ sub remover_saltos_innecesarios{
     }
   }
 
+  #Eliminamos los saltos innecesarios para #800040
   for (my $i=0; $i<= $#linesToConsider; $i++) {
     my $line = $linesToConsider[$i]-(2*$i);
     splice @htmlContentArr_ref, $line, 2;
@@ -446,6 +462,7 @@ sub remover_saltos_innecesarios{
     }
   }
 
+  #Eliminamos esos saltos innecesarios
   for (my $i=0; $i<= $#linesToConsider; $i++) {
     my $line = $linesToConsider[$i]-(2*$i);
     splice @htmlContentArr_ref, $line, 2;
@@ -454,6 +471,7 @@ sub remover_saltos_innecesarios{
   return @htmlContentArr_ref;
 }
 
+#Buscamos las lineas que tienen un parentesis sin cerrar y buscamos hasta encontralos
 sub reparar_parentesis{
   my ($htmlContentArr) = @_;
   my @htmlContentArr_ref   =  @{$htmlContentArr};
@@ -488,17 +506,20 @@ sub reparar_parentesis{
   return @htmlContentArr_ref;
 }
 
+#Eliminamos algunos divs entre parentesis
 sub alinear_parentesis{
   my ($htmlContentArr) = @_;
   my @htmlContentArr_ref   =  @{$htmlContentArr};
   my @linesToConsider = ();
 
+  #buscamos lineas con parentesis entre lineas
   for my $i (0..$#htmlContentArr_ref) {
     if ($htmlContentArr_ref[$i] =~ /color:#008000/ and $htmlContentArr_ref[$i+1] =~ /\(/ and $htmlContentArr_ref[$i-5] =~ /(bold|#808080)/ and not $htmlContentArr_ref[$i-5] =~ /(#0000FF|#800040)/) {
       push @linesToConsider, $i-2;
     }
   }
 
+  #Eliminamos esas lineas
   for (my $i=0; $i<= $#linesToConsider; $i++) {
     my $line = $linesToConsider[$i]-(2*$i);
     splice @htmlContentArr_ref, $line, 2;
@@ -507,6 +528,7 @@ sub alinear_parentesis{
   return @htmlContentArr_ref;
 }
 
+#Alineamos los diamentes que sirven para numeracion
 sub alinear_diamantes{
   my ($htmlContentArr) = @_;
   my @htmlContentArr_ref   =  @{$htmlContentArr};
@@ -516,6 +538,7 @@ sub alinear_diamantes{
   my $fontA = "<font>";
   my $fontC = "</font>";
 
+  #Buscamos algunso diams perdidos
   for my $i (0..$#htmlContentArr_ref) {
     if ($htmlContentArr_ref[$i] =~ /&diams;/) {
       if ($htmlContentArr_ref[$i-2] =~ /$divA/ and $htmlContentArr_ref[$i-1] =~ /$fontA/ and $htmlContentArr_ref[$i+1] =~ /$fontC/ and $htmlContentArr_ref[$i+2] =~ /$divC/) {
@@ -524,15 +547,18 @@ sub alinear_diamantes{
     }
   }
 
+  #Eliiminamos todos esos diams perdidos
   for (my $i=0; $i<= $#linesToConsider; $i++) {
     my $line = $linesToConsider[$i]-(5*$i);
     my @a = splice @htmlContentArr_ref, $line, 5;
   }
 
+  #insertamos los nuevos diams donde se necesitan
   for my $i (0..$#linesToConsider) {
     splice @htmlContentArr_ref, $linesToConsider[$i]+2+$i, 0, "&diams;" if $linesToConsider[$i]+2+$i <= $#htmlContentArr_ref;
   }
 
+  #Insertamos los diams que no esten donde deben, en la posicion correcta
   @linesToConsider = ();
   for my $i (0..$#htmlContentArr_ref) {
     if ($htmlContentArr_ref[$i] =~ /&diams;/ and not $htmlContentArr_ref[$i-1] =~ /<div>/) {
