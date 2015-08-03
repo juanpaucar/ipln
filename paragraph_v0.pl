@@ -28,12 +28,38 @@ my @unneddedColors = ("#D7D7D7", "#004000", "#9FB99F", "#A0B7A0",
 if (! defined $ARGV[0]){die "Ejemplo de uso:\n./paragraph.pl html/do.html\n";}
 main($ARGV[0]);#Calling main procedure
 
-
 sub main{
-  my ($htmlFileName) = @_;
+  my ($directory) = @_;
+  my @files = ();
+
+  #Buscamos cada archivo en el directorio que recibimos de argumento
+  opendir (DIR, $directory) or die $!;
+  while (my $file = readdir(DIR)) {
+    push @files, $file if (not $file =~ /DS_Store/);
+  }
+  closedir(DIR);
+
+  #Nos deshacemos de `.` y `..`
+  splice @files, 0, 2;
+
+  #Eliminamos las caprteas de ejecuciones anteriores
+  #si es la primera vez que ejecutamos simplemente nos dara un error
+  #pero seguira con la ejecucion del programa
+  system("rm", ("-rf", "salida"));
+  system("mkdir", "salida");
+  system("rm", ("-rf", "tablas"));
+  system("mkdir", "tablas");
+
+  #Procesamos cada archivo en la carpeta
+  map { process_html($directory, $_) } @files;
+}
+
+sub process_html{
+  my ($directory, $htmlFileName) = @_;
 
   #Abrir el archivo y almacenarlo en un arreglo
-  my $htmlContent = openFile($htmlFileName);
+  my $total_path = join("/", ($directory, $htmlFileName));
+  my $htmlContent = openFile($total_path);
   my @htmlContentArr = split('\n', $htmlContent); 
 
   #Formatear lo mas ocrrectamente posible el HTML
@@ -49,8 +75,9 @@ sub main{
   map { $_ = decode_entities($_) } @htmlContentArr;
 
   #Crear un Archivo con el HTML formateado
+  my $nuevo_html = join("/", ("salida", $htmlFileName));
   my $texto = join("\n", @htmlContentArr); 
-  open(OUT_HTML, ">", "salida.html");
+  open(OUT_HTML, ">", $nuevo_html);
   print OUT_HTML $texto;
   close(OUT_HTML);
 
@@ -72,11 +99,12 @@ sub main{
   my @bodyA = ($entrada_textual, $pronunciacion, $observacion, $contexto, $etiqueta, $subcontexto, $ejemplo);
   my $body = join "<br><br>", @bodyA;
   my $salida = join " ", ($html_head, $body, $html_tail);
-  open(OUT_TABLES, ">", "tablas.html");
+  my $tabla_salida = join "/", ("tablas", $htmlFileName);
+  open(OUT_TABLES, ">", $tabla_salida);
   print OUT_TABLES $salida;
   close(OUT_TABLES);
 
-  print "Los archivos `salida.html` y `tablas.html` hasn sido generados en el directorio actual\n";
+  print "Los archivos han sido creados en salida/$htmlFileName y tablas/$htmlFileName\n";
 }
 
 #This procedure removes unwanted paragraphs from the html input array.
