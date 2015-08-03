@@ -25,7 +25,7 @@ my @unneddedColors = ("#D7D7D7", "#004000", "#9FB99F", "#A0B7A0",
                       "#000080", "#000059"
                      );
 
-if (! defined $ARGV[0]){die "Ejemplo de uso:\n./paragraph.pl html/do.html\n";}
+if (! defined $ARGV[0]){die "Ejemplo de uso:\n./paragraph.pl html/\n";}
 main($ARGV[0]);#Calling main procedure
 
 sub main{
@@ -72,6 +72,7 @@ sub process_html{
   @htmlContentArr = remove_unnedeed_parts(\@htmlContentArr);
   @htmlContentArr = remove_extra_information(\@htmlContentArr);
   @htmlContentArr = remove_extra_chars(\@htmlContentArr);
+  @htmlContentArr = remove_empty_tags(\@htmlContentArr);
 
   #Decodificar los HTML a UTF8
   map { $_ = decode_entities($_) } @htmlContentArr;
@@ -275,6 +276,32 @@ sub remove_extra_chars {
   
   for my $i (0..$#htmlContentArr_ref) {
     $htmlContentArr_ref[$i] =~ s/$unwanted1//g;
+  }
+
+  return @htmlContentArr_ref;
+}
+
+#Removes empty tags within the @tags array
+sub remove_empty_tags {
+  my ($htmlContentArr) = @_;
+  my @htmlContentArr_ref   =  @{$htmlContentArr};
+  my @linesToConsider = ();
+  my @tags = ("font", "div");
+
+  for my $j (0..$#tags) {
+    my $tag = $tags[$j];
+    for (my $i=0; $i<= $#htmlContentArr_ref; $i++){
+      if ($htmlContentArr_ref[$i] =~ /^[\s]*<$tag>[\s]*$/ and $htmlContentArr_ref[$i+1] =~ /^[\s]*<\/$tag>[\s]*$/) {
+        push(@linesToConsider, $i);
+        $i++;
+      }
+    }
+
+    for (my $i=0; $i<= $#linesToConsider; $i++) {
+      my $line = $linesToConsider[$i]-(2*$i);
+      splice @htmlContentArr_ref, $line, 2;
+    }
+    @linesToConsider = ();
   }
 
   return @htmlContentArr_ref;
