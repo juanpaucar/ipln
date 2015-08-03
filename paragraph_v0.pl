@@ -104,13 +104,14 @@ sub process_html{
   my $etiqueta        = join " ", &crear_tabla("Etiqueta Morfologica", &reconocer_etiqueta_morfologica($texto));
   my $subcontexto     = join " ", &crear_tabla("Subcontexto", &reconocer_sub_contexto($texto));
   my $ejemplo         = join " ", &crear_tabla("Ejemplo", &reconocer_ejemplo_esp($texto));
+  my $palabra_comp    = join " ", &crear_tabla("Palabras compuestas", &reconocer_palabra_compuesta($texto));
 
 
   #Preparamos un HTML para la salida con las tablas de los elementos encontrados en el texto
   # y lo imprimimos
   my $html_head = "<html><head><title>Salida</title><style>table, th, td {border: 1px solid black;text-align: left;}</style></head><body>";
   my $html_tail = "</body></html>";
-  my @bodyA = ($entrada_textual, $pronunciacion, $observacion, $contexto, $etiqueta, $subcontexto, $ejemplo);
+  my @bodyA = ($entrada_textual, $pronunciacion, $observacion, $contexto, $etiqueta, $subcontexto, $ejemplo, $palabra_comp);
   my $body = join "<br><br>", @bodyA;
   my $salida = join " ", ($html_head, $body, $html_tail);
   my $tabla_salida = join "/", ("tablas", $htmlFileName);
@@ -596,6 +597,20 @@ sub  reconocer_sub_contexto{
   #=cut
   my ($texto) = @_;
   my @matches = ( $texto =~ /<font style="color:#008000;">[\s]+([a-zA-Zàáäâéèëêíìïîóòöôúùüû]+\+[a-zA-Zàáäâéèëêíìïîóòöôúùüû]+)[\s]+<\/font>/g );
+  @matches;
+}
+
+sub reconocer_palabra_compuesta{
+##=pod
+##</div>
+##<div>
+##  <font style="font-weight:bold;color:#0000FF;">
+## mano dura 
+##</font>
+##=cut
+
+  my ($texto) = @_;
+  my @matches = ($texto =~ /<\/div>[\n ]+<div>[\n ]+<font style=\"font-weight:bold;color:#0000FF;\">([^<]+)/g);
   @matches;
 }
 
