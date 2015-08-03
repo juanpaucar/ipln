@@ -597,7 +597,7 @@ sub reconocer_entrada_textual{
   #=cut
 
   my ($texto) = @_;
-  my @matches = ($texto =~ /<font style=\"font\-weight:bold;color:#0000FF;\">([^<]+)/g );
+  my @matches = ($texto =~ /<font style=\"font\-weight:bold;color:#0000FF;\">([^<]+)/ );
   map { $_ = trim($_) } @matches;
   @matches;
 }
