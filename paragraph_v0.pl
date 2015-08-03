@@ -22,7 +22,8 @@ my @unneddedColors = ("#D7D7D7", "#004000", "#9FB99F", "#A0B7A0",
                       "#000034", "#A1B2AB", "#A2BBA2", "#8F8FB4",
                       "#809B80", "#B1B1DA", "#9FB6A1", "#A8A8DC",
                       "#005600", "#A7BAA7", "#8C8CBA", "#9EABA4",
-                      "#000080", "#000059", "#A4A4CA"
+                      "#000080", "#000059", "#A4A4CA", "#9191D6",
+                      "#0000BD"
                      );
 
 if (! defined $ARGV[0]){die "Ejemplo de uso:\n./paragraph.pl html/\n";}
