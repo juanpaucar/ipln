@@ -13,6 +13,7 @@ use warnings;
 use strict;
 binmode STDOUT, ":utf8";
 
+#Lista con los colores de restos del parseo del pdf a html
 my @unneddedColors = ("#D7D7D7", "#004000", "#9FB99F", "#A0B7A0",
                       "#9CB49E", "#99B499", "#9B9BBF", "#B7C9B7",
                       "#9DADA3", "#9CBD9C", "#9EB0A0", "#000058",
@@ -69,7 +70,7 @@ sub process_html{
   my $htmlContent = openFile($total_path);
   my @htmlContentArr = split('\n', $htmlContent); 
 
-  #Formatear lo mas ocrrectamente posible el HTML
+  #Formatear lo mas correctamente posible el HTML
   @htmlContentArr = remove_paragraph(\@htmlContentArr);
   @htmlContentArr = insert_paragraph(\@htmlContentArr);
   @htmlContentArr = remove_empty_paragraphs(\@htmlContentArr);
@@ -84,6 +85,7 @@ sub process_html{
   @htmlContentArr = remover_saltos_innecesarios(\@htmlContentArr);
   @htmlContentArr = reparar_parentesis(\@htmlContentArr);
   @htmlContentArr = alinear_parentesis(\@htmlContentArr);
+  @htmlContentArr = alinear_diamantes(\@htmlContentArr);
 
   #Crear un Archivo con el HTML formateado
   my $nuevo_html = join("/", ("salida", $htmlFileName));
@@ -156,6 +158,7 @@ sub insert_paragraph{
   my @colorsToAdd = ("#0000FF", "#008000");
   my @linesToConsider = ();
 
+  #busco las secciones con los colores
   for (my $i=0; $i<= $#htmlContentArr_ref; $i++){
     for (my $j=0; $j<= $#colorsToAdd; $j++) {
       if (index($htmlContentArr_ref[$i], $colorsToAdd[$j]) != -1 ) {
@@ -271,10 +274,11 @@ sub remove_extra_information {
   my $harper = "HarperCollins";
   my $soft = "Softissimo";
   my $paper = "Paperless";
+  my $year = "1999";
 
   for my $i (0..$#htmlContentArr_ref) {
     my $line = $htmlContentArr_ref[$i];
-    push(@linesToConsider, $i) if ($line =~ /($lexibase|$dictionary|$harper|$soft|$paper)/i);
+    push(@linesToConsider, $i) if ($line =~ /($lexibase|$dictionary|$harper|$soft|$paper|$year)/i);
   }
 
   for my $i (0..$#linesToConsider) {
@@ -351,6 +355,16 @@ sub remove_empty_tags {
     @linesToConsider = ();
   }
 
+  #Eliminar lineas que solo tienen `&nbsp`
+  @linesToConsider = ();
+  for my $i (0..$#htmlContentArr_ref) {
+    push(@linesToConsider, $i-1) if ($htmlContentArr_ref[$i] =~ /^[\s]*(&nbsp;)+[\s]*$/);
+  }
+  for (my $i=0; $i<= $#linesToConsider; $i++) {
+    my $line = $linesToConsider[$i]-(3*$i);
+    splice @htmlContentArr_ref, $line, 3;
+  }
+
  return @htmlContentArr_ref;
 }
 
@@ -393,7 +407,7 @@ sub remover_saltos_innecesarios{
 
   #saltos innecesarios para los bloques con color #800040
   for my $i (0..$#htmlContentArr_ref){
-    if ($htmlContentArr_ref[$i] =~ /<font style=\"font\-style:italic;color:#800040;\"/ and $htmlContentArr_ref[$i+5] =~ /<font>/) {
+    if ($htmlContentArr_ref[$i] =~ /<font style=\"font\-style:italic;color:#800040;\"/ and $htmlContentArr_ref[$i+5] =~ /<font.+/) {
       push @linesToConsider, $i+3;
     }
   }
@@ -471,6 +485,46 @@ sub alinear_parentesis{
   for (my $i=0; $i<= $#linesToConsider; $i++) {
     my $line = $linesToConsider[$i]-(2*$i);
     splice @htmlContentArr_ref, $line, 2;
+  }
+
+  return @htmlContentArr_ref;
+}
+
+sub alinear_diamantes{
+  my ($htmlContentArr) = @_;
+  my @htmlContentArr_ref   =  @{$htmlContentArr};
+  my @linesToConsider = ();
+  my $divA = "<div>";
+  my $divC = "</div>";
+  my $fontA = "<font>";
+  my $fontC = "</font>";
+
+  for my $i (0..$#htmlContentArr_ref) {
+    if ($htmlContentArr_ref[$i] =~ /&diams;/) {
+      if ($htmlContentArr_ref[$i-2] =~ /$divA/ and $htmlContentArr_ref[$i-1] =~ /$fontA/ and $htmlContentArr_ref[$i+1] =~ /$fontC/ and $htmlContentArr_ref[$i+2] =~ /$divC/) {
+        push @linesToConsider, $i-3;
+      }
+    }
+  }
+
+  for (my $i=0; $i<= $#linesToConsider; $i++) {
+    my $line = $linesToConsider[$i]-(5*$i);
+    my @a = splice @htmlContentArr_ref, $line, 5;
+  }
+
+  for my $i (0..$#linesToConsider) {
+    splice @htmlContentArr_ref, $linesToConsider[$i]+2+$i, 0, "&diams;" if $linesToConsider[$i]+2+$i <= $#htmlContentArr_ref;
+  }
+
+  @linesToConsider = ();
+  for my $i (0..$#htmlContentArr_ref) {
+    if ($htmlContentArr_ref[$i] =~ /&diams;/ and not $htmlContentArr_ref[$i-1] =~ /<div>/) {
+      my $c = $i;
+      splice @htmlContentArr_ref, $i, 1;
+      while (not $htmlContentArr_ref[$i] =~ /<div>/) {$i--;};
+      splice @htmlContentArr_ref, $i+1, 0, "&diams;";
+      $i = $c+1;
+    }
   }
 
   return @htmlContentArr_ref;
