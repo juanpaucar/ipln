@@ -70,6 +70,7 @@ sub process_html{
   #Abrir el archivo y almacenarlo en un arreglo
   my $total_path = join("/", ($directory, $htmlFileName));
   my $htmlContent = openFile($total_path);
+  $htmlContent =~ s/&nbsp;/ /g;
   my @htmlContentArr = split('\n', $htmlContent); 
 
   #Formatear lo mas correctamente posible el HTML
