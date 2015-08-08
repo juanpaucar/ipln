@@ -34,6 +34,17 @@ my @unneddedColors = ("#D7D7D7", "#004000", "#9FB99F", "#A0B7A0",
                       "#9EB99E", "#B8C9B8", "#9393DF"
                      );
 
+my @entrada_textual = ();
+my @pronunciacion   = ();
+my @observacion     = ();
+my @etiqueta        = ();
+my @subcontexto     = ();
+my @ejemplo_esp     = ();
+my @ejemplo_fra     = ();
+my @palabra_comp    = ();
+my @contexto        = ();
+my @patron_grama    = ();
+
 if (! defined $ARGV[0]){die "Ejemplo de uso:\n./paragraph.pl html/ (esp|frc)\n";}
 main($ARGV[0]);#Calling main procedure
 
@@ -62,6 +73,18 @@ sub main{
 
   #Procesamos cada archivo en la carpeta
   map { process_html($directory, $_) } @files;
+
+  #creamos las tablas con los elementos
+  crear_tabla("Entrada_Textual", @entrada_textual);
+  crear_tabla("Pronunciacion", @pronunciacion);
+  crear_tabla("Observacion", @observacion);
+  crear_tabla("Etiqueta_Morfologica", @etiqueta);
+  crear_tabla("Subcontexto", @subcontexto);
+  crear_tabla("Ejemplo_Espaniol", @ejemplo_esp);
+  crear_tabla("Ejemplo_Frances", @ejemplo_fra);
+  crear_tabla("Palabras_compuestas", @palabra_comp);
+  crear_tabla("Contexto", @contexto);
+  crear_tabla("Patron_Gramatical", @patron_grama);
 }
 
 sub process_html{
@@ -102,30 +125,31 @@ sub process_html{
 
   #Buscamos todas las expresiones regulares en el texto, las devolvemos como un arreglo
   #y usando ese arreglo returnamos un arreglo con una tabla html, la unimos y alamacenamos
-  my $entrada_textual = join " ", &crear_tabla("Entrada Textual", &reconocer_entrada_textual($texto));
-  my $pronunciacion   = join " ", &crear_tabla("Pronunciacion", &reconocer_pronunciacion($texto));
-  my $observacion     = join " ", &crear_tabla("Observacion",  &reconocer_observacion($texto));
-  my $etiqueta        = join " ", &crear_tabla("Etiqueta Morfologica", &reconocer_etiqueta_morfologica($texto));
-  my $subcontexto     = join " ", &crear_tabla("Subcontexto", &reconocer_sub_contexto($texto));
-  my $ejemplo_esp     = join " ", &crear_tabla("Ejemplo Espaniol", &reconocer_ejemplo_esp($texto));
-  my $ejemplo_fra     = join " ", &crear_tabla("Ejemplo Frances", &reconocer_ejemplo_fra($texto));
-  my $palabra_comp    = join " ", &crear_tabla("Palabras compuestas", &reconocer_palabra_compuesta($texto));
-
   my @contexto_arr = &reconocer_contexto($texto);
-  my $contexto = join " ", &crear_tabla("Contexto", grep { not ($_ =~ /\+/) } @contexto_arr);
-  my $patron_g = join " ", &crear_tabla("Patron Gramatical", grep { $_ =~ /\+/ } @contexto_arr);
+  my @contexto_temp        = grep { not ($_ =~ /\+/) } @contexto_arr;
+  my @patron_grama_temp    = grep { $_ =~ /\+/ } @contexto_arr;
+  my @entrada_textual_temp = &reconocer_entrada_textual($texto);
+  my @pronunciacion_temp   = &reconocer_pronunciacion($texto);
+  my @observacion_temp     = &reconocer_observacion($texto);
+  my @etiqueta_temp        = &reconocer_etiqueta_morfologica($texto);
+  my @subcontexto_temp     = &reconocer_sub_contexto($texto);
+  my @ejemplo_esp_temp     = &reconocer_ejemplo_esp($texto);
+  my @ejemplo_fra_temp     = &reconocer_ejemplo_fra($texto);
+  my @palabra_comp_temp    = &reconocer_palabra_compuesta($texto);
 
-  #Preparamos un HTML para la salida con las tablas de los elementos encontrados en el texto
-  # y lo imprimimos
-  my $html_head = "<html><head><title>Salida</title><style>table, th, td {border: 1px solid black;text-align: left;}</style></head><body>";
-  my $html_tail = "</body></html>";
-  my @bodyA = ($entrada_textual, $pronunciacion, $observacion, $contexto, $patron_g, $etiqueta, $subcontexto, $palabra_comp, $ejemplo_esp, $ejemplo_fra);
-  my $body = join "<br><br>", @bodyA;
-  my $salida = join " ", ($html_head, $body, $html_tail);
-  my $tabla_salida = join "/", ("tablas", $htmlFileName);
-  open(OUT_TABLES, ">", $tabla_salida);
-  print OUT_TABLES $salida;
-  close(OUT_TABLES);
+  print "entrada temporal: @entrada_textual_temp\n";
+  print "pronunciacion temporal: @pronunciacion_temp\n";
+
+  map { push @entrada_textual, $_ unless ( $_ ~~ @entrada_textual) } @entrada_textual_temp;
+  map { push @pronunciacion  , $_ unless ( $_ ~~ @pronunciacion  ) } @pronunciacion_temp;
+  map { push @observacion    , $_ unless ( $_ ~~ @observacion    ) } @observacion_temp;
+  map { push @etiqueta       , $_ unless ( $_ ~~ @etiqueta       ) } @etiqueta_temp;
+  map { push @subcontexto    , $_ unless ( $_ ~~ @subcontexto    ) } @subcontexto_temp;
+  map { push @ejemplo_esp    , $_ unless ( $_ ~~ @ejemplo_esp    ) } @ejemplo_esp_temp;
+  map { push @ejemplo_fra    , $_ unless ( $_ ~~ @ejemplo_fra    ) } @ejemplo_fra_temp;
+  map { push @palabra_comp   , $_ unless ( $_ ~~ @palabra_comp   ) } @palabra_comp_temp;
+  map { push @contexto       , $_ unless ( $_ ~~ @contexto       ) } @contexto_temp;
+  map { push @patron_grama   , $_ unless ( $_ ~~ @patron_grama   ) } @patron_grama_temp;
 
   print "Los archivos han sido creados en salida/$htmlFileName y tablas/$htmlFileName\n";
 }
@@ -616,6 +640,7 @@ sub reconocer_pronunciacion{
 
   my ($texto) = @_;
   my @matches = ($texto =~ /<font style=\"color:#CD4970;\">[\s]+([\/a-zA-Zàáäâéèëêíìïîóòöôúùüû]+)[\s]+<\/font>/g );
+  map { $_ = trim($_) } @matches;
   @matches;
 }
 
@@ -629,6 +654,7 @@ sub reconocer_etiqueta_morfologica{
 
   my ($texto) = @_;
   my @matches = ($texto =~ /<font style=\"font-weight:bold;color:#800040;\">([^<]+)/g );
+  map { $_ = trim($_) } @matches;
   @matches;
 }
 
@@ -648,6 +674,7 @@ sub reconocer_observacion{
 
   my ($texto) = @_;
   my @matches = ( $texto =~ /<font style=\"color:#CD4970;\">[\s]+[^<]+[\s]+<\/font>[\s]+<\/div>[\s]+<div>[\s]+<font style=\"font-weight:bold;\">([^<]+)<\/font>[\s]+<font>([^<]+)<\/font>[\s]+<font style=\"font-weight:bold;\">([^<]+)<\/font>[\s]+<font>([^<]+)/g );
+  map { $_ = trim($_) } @matches;
   @matches;
 }
 
@@ -680,6 +707,7 @@ sub reconocer_ejemplo_esp{
 
   my ($texto) = @_;
   my @matches = ( $texto =~/<font style=\"color:#0000FF;\">([a-zA-Zàáäâéèëêíìïîóòöôúùüû\/\s]+)[\s]+<\/font>/g );
+  map { $_ = trim($_) } @matches;
   @matches;
 }
 
@@ -692,6 +720,7 @@ sub reconocer_ejemplo_fra{
 
   my ($texto) = @_;
   my @matches = ( $texto =~/<font>([^<]+)<\/font>/g );
+  map { $_ = trim($_) } @matches;
   @matches;
 }
 
@@ -712,6 +741,7 @@ sub  reconocer_sub_contexto{
   #=cut
   my ($texto) = @_;
   my @matches = ( $texto =~ /<font style="color:#008000;">[\s]+([a-zA-Zàáäâéèëêíìïîóòöôúùüû]+\+[a-zA-Zàáäâéèëêíìïîóòöôúùüû]+)[\s]+<\/font>/g );
+  map { $_ = trim($_) } @matches;
   @matches;
 }
 
@@ -726,21 +756,24 @@ sub reconocer_palabra_compuesta{
 
   my ($texto) = @_;
   my @matches = ($texto =~ /<\/div>[\n ]+<div>[\n ]+<font style=\"font-weight:bold;color:#0000FF;\">([^<]+)/g);
+  map { $_ = trim($_) } @matches;
   @matches;
 }
 
 sub crear_tabla{
   my ($titulo, @elementos) = @_;
-  my @html_table = ();
-  push(@html_table, "<table>");
-  push(@html_table, "<tr>");
-  push(@html_table, "<th>");
-  push(@html_table, $titulo);
-  push(@html_table, "</th>");
-  push(@html_table, "</tr>");
+  my @indices = 0..$#elementos;
+  my @salida_arr = ();
 
-  map { push(@html_table, "<tr><td>$_</td></tr>") } @elementos;
+  for my $i (0..$#elementos) {
+    push @salida_arr, join("\t", ($indices[$i], $elementos[$i]));
+  }
 
-  push(@html_table, "</table>");
-  @html_table;
+  my $salida = join "\n", @salida_arr;
+  my $filename = join ".", ($titulo, "txt");
+  my $filepath = join "/", ("tablas", $filename);
+  print "$filepath creado\n";
+  open(OUT_TABLES, ">", $filepath);
+  print OUT_TABLES $salida;
+  close(OUT_TABLES);
 }
