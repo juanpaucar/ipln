@@ -113,6 +113,9 @@ sub process_html{
   @htmlContentArr = alinear_parentesis(\@htmlContentArr);
   @htmlContentArr = alinear_diamantes(\@htmlContentArr);
 
+  #Decodificar los HTML a UTF8
+  map { $_ = decode_entities($_) } @htmlContentArr;
+
   #Crear un Archivo con el HTML formateado
   my $nuevo_html = join("/", ("salida", $htmlFileName));
   my $texto = join("\n", @htmlContentArr); 
@@ -120,12 +123,9 @@ sub process_html{
   print OUT_HTML $texto;
   close(OUT_HTML);
 
-  #Decodificar los HTML a UTF8
-  map { $_ = decode_entities($_) } @htmlContentArr;
-
   #Buscamos todas las expresiones regulares en el texto, las devolvemos como un arreglo
   #y usando ese arreglo returnamos un arreglo con una tabla html, la unimos y alamacenamos
-  my @contexto_arr = &reconocer_contexto($texto);
+  my @contexto_arr         = &reconocer_contexto($texto);
   my @contexto_temp        = grep { not ($_ =~ /\+/) } @contexto_arr;
   my @patron_grama_temp    = grep { $_ =~ /\+/ } @contexto_arr;
   my @entrada_textual_temp = &reconocer_entrada_textual($texto);
@@ -136,9 +136,6 @@ sub process_html{
   my @ejemplo_esp_temp     = &reconocer_ejemplo_esp($texto);
   my @ejemplo_fra_temp     = &reconocer_ejemplo_fra($texto);
   my @palabra_comp_temp    = &reconocer_palabra_compuesta($texto);
-
-  print "entrada temporal: @entrada_textual_temp\n";
-  print "pronunciacion temporal: @pronunciacion_temp\n";
 
   map { push @entrada_textual, $_ unless ( $_ ~~ @entrada_textual) } @entrada_textual_temp;
   map { push @pronunciacion  , $_ unless ( $_ ~~ @pronunciacion  ) } @pronunciacion_temp;
@@ -772,7 +769,6 @@ sub crear_tabla{
   my $salida = join "\n", @salida_arr;
   my $filename = join ".", ($titulo, "txt");
   my $filepath = join "/", ("tablas", $filename);
-  print "$filepath creado\n";
   open(OUT_TABLES, ">", $filepath);
   print OUT_TABLES $salida;
   close(OUT_TABLES);
