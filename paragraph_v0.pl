@@ -34,16 +34,29 @@ my @unneddedColors = ("#D7D7D7", "#004000", "#9FB99F", "#A0B7A0",
                       "#9EB99E", "#B8C9B8", "#9393DF"
                      );
 
-my @entrada_textual = ();
-my @pronunciacion   = ();
-my @observacion     = ();
-my @etiqueta        = ();
-my @subcontexto     = ();
-my @ejemplo_esp     = ();
-my @ejemplo_fra     = ();
-my @palabra_comp    = ();
-my @contexto        = ();
-my @patron_grama    = ();
+my @entrada_textual  = ();
+my @pronunciacion    = ();
+my @observacion      = ();
+my @etiqueta         = ();
+my @entrada_etiqueta = ();
+my @subcontexto      = ();
+my @ejemplo_esp      = ();
+my @ejemplo_fra      = ();
+my @palabra_comp     = ();
+my @contexto         = ();
+my @patron_grama     = ();
+
+my $id_entrada = 0;
+my $id_pronunciacion = 0;
+my $id_etiqueta = 0;
+my $id_entrada_etiqueta = 0;
+my $id_ejemplo_palabra_compuesta = 0;
+my $id_contexto = 0;
+my $id_patron_gramatical = 0;
+my $id_ejemplo_contexto = 0;
+my $id_ejemplo_patron_gramatical = 0;
+
+
 
 if (! defined $ARGV[0]){die "Ejemplo de uso:\n./paragraph.pl html/ (esp|frc)\n";}
 main($ARGV[0]);#Calling main procedure
@@ -77,14 +90,15 @@ sub main{
   #creamos las tablas con los elementos
   crear_tabla("Entrada_Textual", @entrada_textual);
   crear_tabla("Pronunciacion", @pronunciacion);
-  crear_tabla("Observacion", @observacion);
+  #crear_tabla("Observacion", @observacion);
   crear_tabla("Etiqueta_Morfologica", @etiqueta);
-  crear_tabla("Subcontexto", @subcontexto);
-  crear_tabla("Ejemplo_Espaniol", @ejemplo_esp);
-  crear_tabla("Ejemplo_Frances", @ejemplo_fra);
+  crear_tabla("Entrada_Etiqueta", @entrada_etiqueta);
+  #crear_tabla("Subcontexto", @subcontexto);
+  #crear_tabla("Ejemplo_Espaniol", @ejemplo_esp);
+  #crear_tabla("Ejemplo_Frances", @ejemplo_fra);
   crear_tabla("Palabras_compuestas", @palabra_comp);
-  crear_tabla("Contexto", @contexto);
-  crear_tabla("Patron_Gramatical", @patron_grama);
+  #crear_tabla("Contexto", @contexto);
+  #crear_tabla("Patron_Gramatical", @patron_grama);
 }
 
 sub process_html{
@@ -114,7 +128,6 @@ sub process_html{
   @htmlContentArr = alinear_diamantes(\@htmlContentArr);
 
   #Decodificar los HTML a UTF8
-  map { $_ = decode_entities($_) } @htmlContentArr;
 
   #Crear un Archivo con el HTML formateado
   my $nuevo_html = join("/", ("salida", $htmlFileName));
@@ -123,30 +136,35 @@ sub process_html{
   print OUT_HTML $texto;
   close(OUT_HTML);
 
+ 
+  map { $_ = decode_entities($_) } @htmlContentArr;
+  $texto = join("\n", @htmlContentArr); 
+
   #Buscamos todas las expresiones regulares en el texto, las devolvemos como un arreglo
   #y usando ese arreglo returnamos un arreglo con una tabla html, la unimos y alamacenamos
-  my @contexto_arr         = &reconocer_contexto($texto);
-  my @contexto_temp        = grep { not ($_ =~ /\+/) } @contexto_arr;
-  my @patron_grama_temp    = grep { $_ =~ /\+/ } @contexto_arr;
-  my @entrada_textual_temp = &reconocer_entrada_textual($texto);
-  my @pronunciacion_temp   = &reconocer_pronunciacion($texto);
-  my @observacion_temp     = &reconocer_observacion($texto);
-  my @etiqueta_temp        = &reconocer_etiqueta_morfologica($texto);
-  my @subcontexto_temp     = &reconocer_sub_contexto($texto);
-  my @ejemplo_esp_temp     = &reconocer_ejemplo_esp($texto);
-  my @ejemplo_fra_temp     = &reconocer_ejemplo_fra($texto);
-  my @palabra_comp_temp    = &reconocer_palabra_compuesta($texto);
+  #my @contexto_arr         = &reconocer_contexto($texto);
+  #my @contexto_temp        = grep { not ($_ =~ /\+/) } @contexto_arr;
+  #my @patron_grama_temp    = grep { $_ =~ /\+/ } @contexto_arr;
+  #my @entrada_textual_temp = &reconocer_entrada_textual($texto);
+  reconocer_entrada_textual($texto);
+  #my @pronunciacion_temp   = &reconocer_pronunciacion($texto);
+  #my @observacion_temp     = &reconocer_observacion($texto);
+  #my @etiqueta_temp        = &reconocer_etiqueta_morfologica($texto);
+  #my @subcontexto_temp     = &reconocer_sub_contexto($texto);
+  #my @ejemplo_esp_temp     = &reconocer_ejemplo_esp($texto);
+  #my @ejemplo_fra_temp     = &reconocer_ejemplo_fra($texto);
+  #my @palabra_comp_temp    = &reconocer_palabra_compuesta($texto);
 
-  map { push @entrada_textual, $_ unless ( $_ ~~ @entrada_textual) } @entrada_textual_temp;
-  map { push @pronunciacion  , $_ unless ( $_ ~~ @pronunciacion  ) } @pronunciacion_temp;
-  map { push @observacion    , $_ unless ( $_ ~~ @observacion    ) } @observacion_temp;
-  map { push @etiqueta       , $_ unless ( $_ ~~ @etiqueta       ) } @etiqueta_temp;
-  map { push @subcontexto    , $_ unless ( $_ ~~ @subcontexto    ) } @subcontexto_temp;
-  map { push @ejemplo_esp    , $_ unless ( $_ ~~ @ejemplo_esp    ) } @ejemplo_esp_temp;
-  map { push @ejemplo_fra    , $_ unless ( $_ ~~ @ejemplo_fra    ) } @ejemplo_fra_temp;
-  map { push @palabra_comp   , $_ unless ( $_ ~~ @palabra_comp   ) } @palabra_comp_temp;
-  map { push @contexto       , $_ unless ( $_ ~~ @contexto       ) } @contexto_temp;
-  map { push @patron_grama   , $_ unless ( $_ ~~ @patron_grama   ) } @patron_grama_temp;
+  #map { push @entrada_textual, $_ unless ( $_ ~~ @entrada_textual) } @entrada_textual_temp;
+  #map { push @pronunciacion  , $_ unless ( $_ ~~ @pronunciacion  ) } @pronunciacion_temp;
+  #map { push @observacion    , $_ unless ( $_ ~~ @observacion    ) } @observacion_temp;
+  #map { push @etiqueta       , $_ unless ( $_ ~~ @etiqueta       ) } @etiqueta_temp;
+  #map { push @subcontexto    , $_ unless ( $_ ~~ @subcontexto    ) } @subcontexto_temp;
+  #map { push @ejemplo_esp    , $_ unless ( $_ ~~ @ejemplo_esp    ) } @ejemplo_esp_temp;
+  #map { push @ejemplo_fra    , $_ unless ( $_ ~~ @ejemplo_fra    ) } @ejemplo_fra_temp;
+  #map { push @palabra_comp   , $_ unless ( $_ ~~ @palabra_comp   ) } @palabra_comp_temp;
+  #map { push @contexto       , $_ unless ( $_ ~~ @contexto       ) } @contexto_temp;
+  #map { push @patron_grama   , $_ unless ( $_ ~~ @patron_grama   ) } @patron_grama_temp;
 
   print "Los archivos han sido creados en salida/$htmlFileName y tablas/$htmlFileName\n";
 }
@@ -613,20 +631,6 @@ sub openFile{
   return $fileContent;
 }
 
-sub reconocer_entrada_textual{
-  #=pod
-  #Identificando una entrada:
-  #<font style="font-weight:bold;color:#0000FF;">
-  #  de 
-  #</font>
-  #=cut
-
-  my ($texto) = @_;
-  my @matches = ($texto =~ /<font style=\"font\-weight:bold;color:#0000FF;\">([^<]+)/ );
-  map { $_ = trim($_) } @matches;
-  @matches;
-}
-
 sub reconocer_pronunciacion{
   #=pod
   #Identificando la pronunciación:
@@ -635,10 +639,25 @@ sub reconocer_pronunciacion{
   #</font>
   #=cut
 
-  my ($texto) = @_;
+  my ($idf_entrada, $texto) = @_;
   my @matches = ($texto =~ /<font style=\"color:#CD4970;\">[\s]+([\/a-zA-Zàáäâéèëêíìïîóòöôúùüû]+)[\s]+<\/font>/g );
   map { $_ = trim($_) } @matches;
-  @matches;
+  map { push @pronunciacion, { "id_pronunciacion" => $id_pronunciacion, "id_entrada" => $idf_entrada, "pronunciacion" => $_ }; $id_pronunciacion++ } @matches;
+}
+
+sub reconocer_palabra_compuesta{
+##=pod
+##</div>
+##<div>
+##  <font style="font-weight:bold;color:#0000FF;">
+## mano dura 
+##</font>
+##=cut
+
+  my ($idf_entrada, $texto) = @_;
+  my @matches = ($texto =~ /<\/div>[\n ]+<div>[\n ]+<font style=\"font-weight:bold;color:#0000FF;\">([^<]+)/g);
+  map { $_ = trim($_) } @matches;
+  map { push @palabra_comp, { "id_ejemplo_palabra_compuesta" => $id_ejemplo_palabra_compuesta, "id_entrada" => $idf_entrada, "ejemplo_palabra_compuesta" => $_ }; $id_ejemplo_palabra_compuesta++ } @matches;
 }
 
 sub reconocer_etiqueta_morfologica{
@@ -649,10 +668,30 @@ sub reconocer_etiqueta_morfologica{
   #</font>
   #=cut
 
-  my ($texto) = @_;
+  my ($idf_entrada, $texto) = @_;
   my @matches = ($texto =~ /<font style=\"font-weight:bold;color:#800040;\">([^<]+)/g );
   map { $_ = trim($_) } @matches;
-  @matches;
+  my @ids = ();
+  my $match = undef;
+  for my $i (0..$#matches) {
+    ($match) = grep { $$_{etiqueta} eq $matches[$i] } @etiqueta;
+    if ($match) {
+      push @etiqueta, { "id_etiqueta" => $$match{id_etiqueta }, "etiqueta" => $matches[$i] };
+      push @entrada_etiqueta, { "id_entrada_etiqueta" => $id_entrada_etiqueta, "id_entrada" => $idf_entrada, "id_etiqueta" => $$match{id_etiqueta} };
+      $id_entrada_etiqueta++;
+      push @ids, $i;
+      #print "MATCH: $$match{id_entrada_etiqueta}\n" ;
+    }
+    $match = undef;
+  }
+  my $line = 0;
+  for my $i (0..$#ids) {
+    $line = $ids[$i] - $i;
+    splice @matches, $line, 1;
+  }
+  map { push @etiqueta, { "id_etiqueta" => $id_etiqueta, "etiqueta" => $_ };
+        push @entrada_etiqueta, { "id_entrada_etiqueta" => $id_entrada_etiqueta, "id_entrada" => $idf_entrada, "id_etiqueta" => $id_etiqueta };
+        $id_etiqueta++; $id_entrada_etiqueta++ } @matches;
 }
 
 sub reconocer_observacion{
@@ -673,6 +712,33 @@ sub reconocer_observacion{
   my @matches = ( $texto =~ /<font style=\"color:#CD4970;\">[\s]+[^<]+[\s]+<\/font>[\s]+<\/div>[\s]+<div>[\s]+<font style=\"font-weight:bold;\">([^<]+)<\/font>[\s]+<font>([^<]+)<\/font>[\s]+<font style=\"font-weight:bold;\">([^<]+)<\/font>[\s]+<font>([^<]+)/g );
   map { $_ = trim($_) } @matches;
   @matches;
+}
+
+
+
+sub reconocer_entrada_textual{
+  #=pod
+  #Identificando una entrada:
+  #<font style="font-weight:bold;color:#0000FF;">
+  #  de 
+  #</font>
+  #=cut
+
+  my ($texto) = @_;
+  my @matches = ($texto =~ /<font style=\"font\-weight:bold;color:#0000FF;\">([^<]+)/ );
+  map { $_ = trim($_) } @matches;
+  my $entrada = shift @matches;
+
+  ##PRONUNCIACION
+  reconocer_pronunciacion $id_entrada, $texto;
+  ##PALABRAS COMPUESTAS
+  reconocer_palabra_compuesta $id_entrada, $texto;
+  ##ETIQUETAS MORFOLOGICAS
+  reconocer_etiqueta_morfologica $id_entrada, $texto;
+
+
+  push @entrada_textual, { "id_entrada" => $id_entrada, "entrada" => $entrada, "observacion" => "" } ;
+  $id_entrada++;
 }
 
 sub reconocer_contexto{
@@ -742,29 +808,29 @@ sub  reconocer_sub_contexto{
   @matches;
 }
 
-sub reconocer_palabra_compuesta{
-##=pod
-##</div>
-##<div>
-##  <font style="font-weight:bold;color:#0000FF;">
-## mano dura 
-##</font>
-##=cut
-
-  my ($texto) = @_;
-  my @matches = ($texto =~ /<\/div>[\n ]+<div>[\n ]+<font style=\"font-weight:bold;color:#0000FF;\">([^<]+)/g);
-  map { $_ = trim($_) } @matches;
-  @matches;
-}
-
 sub crear_tabla{
   my ($titulo, @elementos) = @_;
-  my @indices = 0..$#elementos;
   my @salida_arr = ();
 
-  for my $i (0..$#elementos) {
-    push @salida_arr, join("\t", ($indices[$i], $elementos[$i]));
+  if ($titulo eq "Entrada_Textual") {
+    map { push @salida_arr, "$$_{id_entrada}\t$$_{entrada}\t$$_{observacion}" } @elementos;
+  } elsif ($titulo eq "Pronunciacion") {
+    map { push @salida_arr, "$$_{id_pronunciacion}\t$$_{id_entrada}\t$$_{pronunciacion}" } @elementos;
+  } elsif ($titulo eq "Palabras_compuestas") {
+    map { push @salida_arr, "$$_{id_ejemplo_palabra_compuesta}\t$$_{id_entrada}\t$$_{ejemplo_palabra_compuesta}" } @elementos;
+  } elsif ($titulo eq "Etiqueta_Morfologica") {
+    map { push @salida_arr, "$$_{id_etiqueta}\t$$_{etiqueta}" } @elementos;
+  } elsif ($titulo eq "Entrada_Etiqueta") {
+    map { push @salida_arr, "$$_{id_entrada_etiqueta}\t$$_{id_entrada}\t$$_{id_etiqueta}" } @elementos;
   }
+
+  #crear_tabla("Observacion", @observacion);
+  #crear_tabla("Etiqueta_Morfologica", @etiqueta);
+  #crear_tabla("Subcontexto", @subcontexto);
+  #crear_tabla("Ejemplo_Espaniol", @ejemplo_esp);
+  #crear_tabla("Ejemplo_Frances", @ejemplo_fra);
+  #crear_tabla("Contexto", @contexto);
+  #crear_tabla("Patron_Gramatical", @patron_grama);
 
   my $salida = join "\n", @salida_arr;
   my $filename = join ".", ($titulo, "txt");
