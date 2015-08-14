@@ -90,15 +90,15 @@ sub main{
   #creamos las tablas con los elementos
   crear_tabla("Entrada_Textual", @entrada_textual);
   crear_tabla("Pronunciacion", @pronunciacion);
-  #crear_tabla("Observacion", @observacion);
   crear_tabla("Etiqueta_Morfologica", @etiqueta);
   crear_tabla("Entrada_Etiqueta", @entrada_etiqueta);
+  crear_tabla("Palabras_compuestas", @palabra_comp);
+  crear_tabla("Contexto", @contexto);
+  crear_tabla("Patron_Gramatical", @patron_grama);
+  #crear_tabla("Observacion", @observacion);
   #crear_tabla("Subcontexto", @subcontexto);
   #crear_tabla("Ejemplo_Espaniol", @ejemplo_esp);
   #crear_tabla("Ejemplo_Frances", @ejemplo_fra);
-  crear_tabla("Palabras_compuestas", @palabra_comp);
-  #crear_tabla("Contexto", @contexto);
-  #crear_tabla("Patron_Gramatical", @patron_grama);
 }
 
 sub process_html{
@@ -640,7 +640,7 @@ sub reconocer_pronunciacion{
   #=cut
 
   my ($idf_entrada, $texto) = @_;
-  my @matches = ($texto =~ /<font style=\"color:#CD4970;\">[\s]+([\/a-zA-Zàáäâéèëêíìïîóòöôúùüû]+)[\s]+<\/font>/g );
+  my @matches = ($texto =~ /<font style=\"color:#CD4970;\">[\s]+[\/]+([a-zA-Zàáäâéèëêíìïîóòöôúùüû]+)+[\/]+[\s]+<\/font>/g );
   map { $_ = trim($_) } @matches;
   map { push @pronunciacion, { "id_pronunciacion" => $id_pronunciacion, "id_entrada" => $idf_entrada, "pronunciacion" => $_ }; $id_pronunciacion++ } @matches;
 }
@@ -660,6 +660,121 @@ sub reconocer_palabra_compuesta{
   map { push @palabra_comp, { "id_ejemplo_palabra_compuesta" => $id_ejemplo_palabra_compuesta, "id_entrada" => $idf_entrada, "ejemplo_palabra_compuesta" => $_ }; $id_ejemplo_palabra_compuesta++ } @matches;
 }
 
+#RECONOCE EL TEXTO DE LA ETIQUETA
+sub texto_de_etiqueta {
+  my ($etiqueta_local, $texto) = @_;
+  my @texto_arr = split '\n', $texto;
+  my @lineas = ();
+
+  for my $i (0..$#texto_arr) {
+    if (index ($texto_arr[$i], $etiqueta_local) != -1) {
+      while ((($i+1) < $#texto_arr) and not ($texto_arr[$i+1] =~ /<font style=\"font-weight:bold;color:#800040;\">([^<]+)/g ) ) {
+        push @lineas, $texto_arr[$i+1];
+        $i++;
+      }
+      last;
+    }
+  }
+
+  my $res = join "\n", @lineas;
+  #print "\nTEXTO:\n$res\n\n";
+  return $res;
+}
+
+sub reconocer_contexto{
+  #=pod
+  #Identificando el contexto:
+    #<(\font style=\"font style="color:#008000)>
+      #(gen, complemento de n)
+    #</font>
+  #=cut
+  #=pod 
+  #<font style=\"font style="color:#008000;\">[\s]+([\(a-zA-Zàáäâéèëêíìïîóòöôúùüû\)]+)[\s]+<\/font>[^\)]/ 
+  #=cut
+
+  my ($idf_etiqueta, $texto, @matches) = @_;
+
+  #NO INSERTAR CONTEXTOS QUE YA ESTEN
+  my @ids = ();
+  my $match = undef;
+  my @res = ();
+  #BUSCAMOS LAS QUE YA SE ENCUETREN E INSERTAMOS
+  for my $i (0..$#matches) {
+    @res = grep { $$_{contexto} eq $matches[$i] } @contexto;
+    if ($#res >= 0) {
+      $match = shift @res;
+      push @ids, $i;
+    }
+    $match = undef;
+    @res = ();
+  }
+
+  #REMOVEMOS A ESOS CONTEXTOS DEL ARREGLO
+  my $line = 0;
+  for my $i (0..$#ids) {
+    $line = $ids[$i] - $i;
+    splice @matches, $line, 1;
+  }
+  #INSERTAMOS EL ARREGLO DE CONTEXTOS
+  map { push @contexto, { "id_contexto" => $id_contexto, "id_entrada_etiqueta" => $idf_etiqueta,  "contexto" => $_ };
+        $id_contexto++ } @matches;
+}
+
+sub reconocer_patron {
+  #=pod
+  #Identificando el contexto:
+    #<(\font style=\"font style="color:#008000)>
+      #(gen, complemento de n)
+    #</font>
+  #=cut
+  #=pod 
+  #<font style=\"font style="color:#008000;\">[\s]+([\(a-zA-Zàáäâéèëêíìïîóòöôúùüû\)]+)[\s]+<\/font>[^\)]/ 
+  #=cut
+
+  my ($idf_etiqueta, $texto, @matches) = @_;
+
+  #NO INSERTAR CONTEXTOS QUE YA ESTEN
+  my @ids = ();
+  my $match = undef;
+  my @res = ();
+  #BUSCAMOS LAS QUE YA SE ENCUETREN E INSERTAMOS
+  for my $i (0..$#matches) {
+    @res = grep { $$_{patron_gramatical} eq $matches[$i] } @patron_grama;
+    if ($#res >= 0) {
+      $match = shift @res;
+      push @ids, $i;
+    }
+    $match = undef;
+    @res = ();
+  }
+
+  print "IDS: @ids\n";
+  #REMOVEMOS A ESOS CONTEXTOS DEL ARREGLO
+  my $line = 0;
+  for my $i (0..$#ids) {
+    $line = $ids[$i] - $i;
+    splice @matches, $line, 1;
+  }
+  #INSERTAMOS EL ARREGLO DE CONTEXTOS
+  map { push @patron_grama, { "id_patron_gramatical" => $id_patron_gramatical, "id_entrada_etiqueta" => $idf_etiqueta,  "patron_gramatical" => $_ };
+        $id_patron_gramatical++ } @matches;
+}
+
+#RECONOCER PATRON y CONTEXTO
+sub reconocer_contexto_y_patron {
+
+  my ($idf_etiqueta, $texto) = @_;
+
+  my @matches = ( $texto =~ /\<div>[\n ]+<font style=\"color:#008000;\">([^<]+)/g );
+  map { $_ = trim ($_) } @matches;
+
+  my @contexto_temp        = grep { not ($_ =~ /\+/) } @matches;
+  reconocer_contexto $idf_etiqueta, $texto, @contexto_temp;
+  my @patron_grama_temp    = grep { $_ =~ /\+/ } @matches;
+  reconocer_patron $idf_etiqueta, $texto, @patron_grama_temp;
+
+}
+
 sub reconocer_etiqueta_morfologica{
   #=pod
   #Identificando la etiqueta morfologica:
@@ -671,26 +786,36 @@ sub reconocer_etiqueta_morfologica{
   my ($idf_entrada, $texto) = @_;
   my @matches = ($texto =~ /<font style=\"font-weight:bold;color:#800040;\">([^<]+)/g );
   map { $_ = trim($_) } @matches;
+
+  #NO INSERTAR ETIQUETAS QUE YA ESTEN
   my @ids = ();
   my $match = undef;
+  my @res = ();
+  #BUSCAMOS LAS QUE YA SE ENCUETREN E INSERTAMOS
   for my $i (0..$#matches) {
-    ($match) = grep { $$_{etiqueta} eq $matches[$i] } @etiqueta;
-    if ($match) {
-      push @etiqueta, { "id_etiqueta" => $$match{id_etiqueta }, "etiqueta" => $matches[$i] };
+    @res = grep { $$_{etiqueta} eq $matches[$i] } @etiqueta;
+    if ($#res >= 0) {
+      $match = shift @res;
       push @entrada_etiqueta, { "id_entrada_etiqueta" => $id_entrada_etiqueta, "id_entrada" => $idf_entrada, "id_etiqueta" => $$match{id_etiqueta} };
+      #RECONOCEMOS CONTEXTOS Y PATRON
+      reconocer_contexto_y_patron $id_entrada_etiqueta, texto_de_etiqueta($matches[$i], $texto);
       $id_entrada_etiqueta++;
       push @ids, $i;
-      #print "MATCH: $$match{id_entrada_etiqueta}\n" ;
     }
     $match = undef;
+    @res = ();
   }
+
+  #REMOVEMOS A ESAS ETIQUETAS DEL ARREGLO
   my $line = 0;
   for my $i (0..$#ids) {
     $line = $ids[$i] - $i;
     splice @matches, $line, 1;
   }
+  #INSERTAMOS EL ARREGLO DE ENTRADAS
   map { push @etiqueta, { "id_etiqueta" => $id_etiqueta, "etiqueta" => $_ };
         push @entrada_etiqueta, { "id_entrada_etiqueta" => $id_entrada_etiqueta, "id_entrada" => $idf_entrada, "id_etiqueta" => $id_etiqueta };
+        reconocer_contexto_y_patron $id_entrada_etiqueta, texto_de_etiqueta($_, $texto);
         $id_etiqueta++; $id_entrada_etiqueta++ } @matches;
 }
 
@@ -739,23 +864,6 @@ sub reconocer_entrada_textual{
 
   push @entrada_textual, { "id_entrada" => $id_entrada, "entrada" => $entrada, "observacion" => "" } ;
   $id_entrada++;
-}
-
-sub reconocer_contexto{
-  #=pod
-  #Identificando el contexto:
-    #<(\font style=\"font style="color:#008000)>
-      #(gen, complemento de n)
-    #</font>
-  #=cut
-  #=pod 
-  #<font style=\"font style="color:#008000;\">[\s]+([\(a-zA-Zàáäâéèëêíìïîóòöôúùüû\)]+)[\s]+<\/font>[^\)]/ 
-  #=cut
-
-  my ($texto) = @_;
-  my @matches = ( $texto =~ /\<div>[\n ]+<font style=\"color:#008000;\">([^<]+)/g );
-  map { $_ = trim ($_) } @matches;
-  @matches;
 }
 
 
@@ -822,15 +930,16 @@ sub crear_tabla{
     map { push @salida_arr, "$$_{id_etiqueta}\t$$_{etiqueta}" } @elementos;
   } elsif ($titulo eq "Entrada_Etiqueta") {
     map { push @salida_arr, "$$_{id_entrada_etiqueta}\t$$_{id_entrada}\t$$_{id_etiqueta}" } @elementos;
+  } elsif ($titulo eq "Patron_Gramatical") {
+    map { push @salida_arr, "$$_{id_patron_gramatical}\t$$_{id_entrada_etiqueta}\t$$_{patron_gramatical}" } @elementos;
+  } elsif ($titulo eq "Contexto") {
+    map { push @salida_arr, "$$_{id_contexto}\t$$_{id_entrada_etiqueta}\t$$_{contexto}" } @elementos;
   }
 
   #crear_tabla("Observacion", @observacion);
-  #crear_tabla("Etiqueta_Morfologica", @etiqueta);
   #crear_tabla("Subcontexto", @subcontexto);
   #crear_tabla("Ejemplo_Espaniol", @ejemplo_esp);
   #crear_tabla("Ejemplo_Frances", @ejemplo_fra);
-  #crear_tabla("Contexto", @contexto);
-  #crear_tabla("Patron_Gramatical", @patron_grama);
 
   my $salida = join "\n", @salida_arr;
   my $filename = join ".", ($titulo, "txt");
