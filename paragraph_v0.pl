@@ -140,32 +140,7 @@ sub process_html{
   map { $_ = decode_entities($_) } @htmlContentArr;
   $texto = join("\n", @htmlContentArr); 
 
-  #Buscamos todas las expresiones regulares en el texto, las devolvemos como un arreglo
-  #y usando ese arreglo returnamos un arreglo con una tabla html, la unimos y alamacenamos
-  #my @contexto_arr         = &reconocer_contexto($texto);
-  #my @contexto_temp        = grep { not ($_ =~ /\+/) } @contexto_arr;
-  #my @patron_grama_temp    = grep { $_ =~ /\+/ } @contexto_arr;
-  #my @entrada_textual_temp = &reconocer_entrada_textual($texto);
   reconocer_entrada_textual($texto);
-  #my @pronunciacion_temp   = &reconocer_pronunciacion($texto);
-  #my @observacion_temp     = &reconocer_observacion($texto);
-  #my @etiqueta_temp        = &reconocer_etiqueta_morfologica($texto);
-  #my @subcontexto_temp     = &reconocer_sub_contexto($texto);
-  #my @ejemplo_esp_temp     = &reconocer_ejemplo_esp($texto);
-  #my @ejemplo_fra_temp     = &reconocer_ejemplo_fra($texto);
-  #my @palabra_comp_temp    = &reconocer_palabra_compuesta($texto);
-
-  #map { push @entrada_textual, $_ unless ( $_ ~~ @entrada_textual) } @entrada_textual_temp;
-  #map { push @pronunciacion  , $_ unless ( $_ ~~ @pronunciacion  ) } @pronunciacion_temp;
-  #map { push @observacion    , $_ unless ( $_ ~~ @observacion    ) } @observacion_temp;
-  #map { push @etiqueta       , $_ unless ( $_ ~~ @etiqueta       ) } @etiqueta_temp;
-  #map { push @subcontexto    , $_ unless ( $_ ~~ @subcontexto    ) } @subcontexto_temp;
-  #map { push @ejemplo_esp    , $_ unless ( $_ ~~ @ejemplo_esp    ) } @ejemplo_esp_temp;
-  #map { push @ejemplo_fra    , $_ unless ( $_ ~~ @ejemplo_fra    ) } @ejemplo_fra_temp;
-  #map { push @palabra_comp   , $_ unless ( $_ ~~ @palabra_comp   ) } @palabra_comp_temp;
-  #map { push @contexto       , $_ unless ( $_ ~~ @contexto       ) } @contexto_temp;
-  #map { push @patron_grama   , $_ unless ( $_ ~~ @patron_grama   ) } @patron_grama_temp;
-
   print "Los archivos han sido creados en salida/$htmlFileName y tablas/$htmlFileName\n";
 }
 
