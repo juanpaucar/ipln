@@ -37,7 +37,6 @@ my @unneddedColors = ("#D7D7D7", "#004000", "#9FB99F", "#A0B7A0",
 
 my @entrada_textual  = ();
 my @pronunciacion    = ();
-my @observacion      = ();
 my @etiqueta         = ();
 my @entrada_etiqueta = ();
 my @subcontexto      = ();
@@ -848,7 +847,9 @@ sub reconocer_observacion{
   my ($texto) = @_;
   my @matches = ( $texto =~ /<font style=\"color:#CD4970;\">[\s]+[^<]+[\s]+<\/font>[\s]+<\/div>[\s]+<div>[\s]+<font style=\"font-weight:bold;\">([^<]+)<\/font>[\s]+<font>([^<]+)<\/font>[\s]+<font style=\"font-weight:bold;\">([^<]+)<\/font>[\s]+<font>([^<]+)/g );
   map { $_ = trim($_) } @matches;
-  @matches;
+  my $tam = $#matches;
+  my $obs = ($tam < 0)? "" : join(" ", @matches);
+  $obs;
 }
 
 
@@ -865,6 +866,7 @@ sub reconocer_entrada_textual{
   my @matches = ($texto =~ /<font style=\"font\-weight:bold;color:#0000FF;\">([^<]+)/ );
   map { $_ = trim($_) } @matches;
   my $entrada = shift @matches;
+  my $observacion = "";
 
   ##PRONUNCIACION
   reconocer_pronunciacion $id_entrada, $texto;
@@ -872,9 +874,11 @@ sub reconocer_entrada_textual{
   reconocer_palabra_compuesta $id_entrada, $texto;
   ##ETIQUETAS MORFOLOGICAS
   reconocer_etiqueta_morfologica $id_entrada, $texto;
+  ##OBSERVACION
+  #my $observacion = reconocer_observacion($texto);
 
 
-  push @entrada_textual, { "id_entrada" => $id_entrada, "entrada" => $entrada, "observacion" => "" } ;
+  push @entrada_textual, { "id_entrada" => $id_entrada, "entrada" => $entrada, "observacion" => $observacion } ;
   $id_entrada++;
 }
 
