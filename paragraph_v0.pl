@@ -97,8 +97,6 @@ sub main{
   crear_tabla("Patron_Gramatical", @patron_grama);
   crear_tabla("Ejemplo_Contexto", @ejemplo_contexto);
   crear_tabla("Ejemplo_Patron_Gramatical", @ejemplo_patron);
-  #crear_tabla("Observacion", @observacion);
-  #crear_tabla("Subcontexto", @subcontexto);
 }
 
 sub process_html{
@@ -126,6 +124,7 @@ sub process_html{
   @htmlContentArr = reparar_parentesis(\@htmlContentArr);
   @htmlContentArr = alinear_parentesis(\@htmlContentArr);
   @htmlContentArr = alinear_diamantes(\@htmlContentArr);
+  @htmlContentArr = eliminar_saltos_de_linea_verdes(\@htmlContentArr);
 
   #Decodificar los HTML a UTF8
 
@@ -591,6 +590,44 @@ sub alinear_diamantes{
   return @htmlContentArr_ref;
 }
 
+sub eliminar_saltos_de_linea_verdes {
+
+  my ($htmlContentArr) = @_;
+  my @htmlContentArr_ref   =  @{$htmlContentArr};
+  my @linesToConsider = ();
+
+  for my $i (0..$#htmlContentArr_ref) {
+    if ((index($htmlContentArr_ref[$i], "#008000") != -1) and ($htmlContentArr_ref[$i+1] =~ /\(\s*(AM|fig|fam)\s*\)/) and ($htmlContentArr_ref[$i-1] =~ /div/) and ($htmlContentArr_ref[$i-2] =~ /\/div/)) {
+      push @linesToConsider, $i-2;;
+    }
+    #if ((index($htmlContentArr_ref[$i], "#008000") != -1) and (index($htmlContentArr_ref[$i-5], "color:#0000FF;")) and ($htmlContentArr_ref[$i-1] =~ /div/) and ($htmlContentArr_ref[$i-2] =~ /\/div/)) {
+      #push @linesToConsider, $i-2;;
+    #}
+  }
+
+  for my $i (0..$#linesToConsider) {
+    my $line = $linesToConsider[$i]-(2*$i);
+    splice @htmlContentArr_ref, $line, 2;
+  }
+  @linesToConsider = ();
+  #for my $i (0..$#htmlContentArr_ref) {
+    #if ((index($htmlContentArr_ref[$i], "#008000") != -1) and (index($htmlContentArr_ref[$i-5], "color:#0000FF;")) and ($htmlContentArr_ref[$i-1] =~ /div/) and ($htmlContentArr_ref[$i-2] =~ /\/div/)) {
+      #push @linesToConsider, $i-2;;
+    #}
+  #}
+  #for my $i (0..$#linesToConsider) {
+    #my $line = $linesToConsider[$i]-(2*$i);
+    #splice @htmlContentArr_ref, $line, 2;
+  #}
+  return @htmlContentArr_ref;
+}
+
+################################################################################### 
+#FIN LIMPIEZA
+################################################################################### 
+#FUNCIONES AUXILIARES
+################################################################################### 
+
 #taken from http://perlmaven.com/trim
 sub ltrim { my $s = shift; $s =~ s/^\s+//;       return $s };
 sub rtrim { my $s = shift; $s =~ s/\s+$//;       return $s };
@@ -605,6 +642,12 @@ sub openFile{
 
   return $fileContent;
 }
+
+################################################################################### 
+#FIN FUNCIONES AUXILIARES
+################################################################################### 
+#RECONOCER ELEMENTOS EN LOS HTML
+################################################################################### 
 
 sub reconocer_pronunciacion{
   #=pod
@@ -931,6 +974,10 @@ sub  reconocer_sub_contexto{
   map { $_ = trim($_) } @matches;
   @matches;
 }
+
+################################################################################### 
+#FIN RECONOCER ELEMENTOS DEL TEXTO
+################################################################################### 
 
 sub crear_tabla{
   my ($titulo, @elementos) = @_;
