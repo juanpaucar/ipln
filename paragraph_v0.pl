@@ -41,8 +41,8 @@ my @observacion      = ();
 my @etiqueta         = ();
 my @entrada_etiqueta = ();
 my @subcontexto      = ();
-my @ejemplo_esp      = ();
-my @ejemplo_fra      = ();
+my @ejemplo_patron   = ();
+my @ejemplo_contexto = ();
 my @palabra_comp     = ();
 my @contexto         = ();
 my @patron_grama     = ();
@@ -96,10 +96,10 @@ sub main{
   crear_tabla("Palabras_compuestas", @palabra_comp);
   crear_tabla("Contexto", @contexto);
   crear_tabla("Patron_Gramatical", @patron_grama);
+  crear_tabla("Ejemplo_Contexto", @ejemplo_contexto);
+  crear_tabla("Ejemplo_Patron_Gramatical", @ejemplo_patron);
   #crear_tabla("Observacion", @observacion);
   #crear_tabla("Subcontexto", @subcontexto);
-  #crear_tabla("Ejemplo_Espaniol", @ejemplo_esp);
-  #crear_tabla("Ejemplo_Frances", @ejemplo_fra);
 }
 
 sub process_html{
@@ -651,10 +651,45 @@ sub texto_de_etiqueta {
       last;
     }
   }
-
   my $res = join "\n", @lineas;
-  #print "\nTEXTO:\n$res\n\n";
   return $res;
+}
+
+#RECONOCER EL TEXTO DE UN CONTEXTO O PATRON
+sub texto_de_patron_y_contexto {
+  my ($palabra, $texto) = @_;
+  my @texto_arr = split '\n', $texto;
+  my @lineas = ();
+
+  for my $i (0..$#texto_arr) {
+    if (index ($texto_arr[$i], $palabra) != -1) {
+      while ((($i+1) < $#texto_arr) and not ($texto_arr[$i+1] =~ /\<div>[\n ]+<font style=\"color:#008000;\">([^<]+)/g)) {
+        push @lineas, $texto_arr[$i+1];
+        $i++;
+      }
+      last;
+    }
+  }
+  #RECONOCER EJEMPLO DE UN CONTEXTO O DE UN PATRON
+  my $res = join "\n", @lineas;
+  return $res;
+}
+
+sub reconocer_ejemplo {
+  my ($tipo, $idf_poc, $texto) = @_;
+
+  my @ejemplos_temp_fr = reconocer_ejemplo_fra($texto);
+  my @ejemplos_temp_esp = reconocer_ejemplo_esp($texto);
+
+  my @ejemplos = (@ejemplos_temp_fr, @ejemplos_temp_esp);
+
+  if ($tipo eq "contexto") {
+    map { push @ejemplo_contexto, { "id_ejemplo_contexto" => $id_ejemplo_contexto, "id_contexto" => $idf_poc, "ejemplo_contexto" => $_ };
+    $id_ejemplo_contexto++; } @ejemplos;
+  } else {
+    map { push @ejemplo_patron, { "id_ejemplo_patron_gramatical" => $id_ejemplo_patron_gramatical, "id_patron_gramatical" => $idf_poc, "ejemplo_patron_gramatical" => $_ };
+    $id_ejemplo_patron_gramatical++;} @ejemplos;
+  }
 }
 
 sub reconocer_contexto{
@@ -669,7 +704,7 @@ sub reconocer_contexto{
   #=cut
 
   my ($idf_etiqueta, $texto, @matches) = @_;
-
+  my $tipo = "contexto";
   #NO INSERTAR CONTEXTOS QUE YA ESTEN
   my @ids = ();
   my $match = undef;
@@ -679,6 +714,7 @@ sub reconocer_contexto{
     @res = grep { $$_{contexto} eq $matches[$i] } @contexto;
     if ($#res >= 0) {
       $match = shift @res;
+      reconocer_ejemplo $texto, $$match{id_contexto}, texto_de_patron_y_contexto($matches[$i], $texto);
       push @ids, $i;
     }
     $match = undef;
@@ -693,6 +729,7 @@ sub reconocer_contexto{
   }
   #INSERTAMOS EL ARREGLO DE CONTEXTOS
   map { push @contexto, { "id_contexto" => $id_contexto, "id_entrada_etiqueta" => $idf_etiqueta,  "contexto" => $_ };
+        reconocer_ejemplo $tipo, $id_contexto, texto_de_patron_y_contexto($_, $texto);
         $id_contexto++ } @matches;
 }
 
@@ -706,9 +743,8 @@ sub reconocer_patron {
   #=pod 
   #<font style=\"font style="color:#008000;\">[\s]+([\(a-zA-Zàáäâéèëêíìïîóòöôúùüû\)]+)[\s]+<\/font>[^\)]/ 
   #=cut
-
   my ($idf_etiqueta, $texto, @matches) = @_;
-
+  my $tipo = "patron";
   #NO INSERTAR CONTEXTOS QUE YA ESTEN
   my @ids = ();
   my $match = undef;
@@ -718,13 +754,12 @@ sub reconocer_patron {
     @res = grep { $$_{patron_gramatical} eq $matches[$i] } @patron_grama;
     if ($#res >= 0) {
       $match = shift @res;
+      reconocer_ejemplo $tipo, $$match{id_patron_gramatical}, texto_de_patron_y_contexto($matches[$i], $texto);
       push @ids, $i;
     }
     $match = undef;
     @res = ();
   }
-
-  print "IDS: @ids\n";
   #REMOVEMOS A ESOS CONTEXTOS DEL ARREGLO
   my $line = 0;
   for my $i (0..$#ids) {
@@ -733,6 +768,7 @@ sub reconocer_patron {
   }
   #INSERTAMOS EL ARREGLO DE CONTEXTOS
   map { push @patron_grama, { "id_patron_gramatical" => $id_patron_gramatical, "id_entrada_etiqueta" => $idf_etiqueta,  "patron_gramatical" => $_ };
+        reconocer_ejemplo $tipo, $id_patron_gramatical, texto_de_patron_y_contexto($_, $texto);
         $id_patron_gramatical++ } @matches;
 }
 
@@ -910,12 +946,14 @@ sub crear_tabla{
     map { push @salida_arr, "$$_{id_patron_gramatical}\t$$_{id_entrada_etiqueta}\t$$_{patron_gramatical}" } @elementos;
   } elsif ($titulo eq "Contexto") {
     map { push @salida_arr, "$$_{id_contexto}\t$$_{id_entrada_etiqueta}\t$$_{contexto}" } @elementos;
+  } elsif ($titulo eq "Ejemplo_Contexto") {
+    map { push @salida_arr, "$$_{id_ejemplo_contexto}\t$$_{id_contexto}\t$$_{ejemplo_contexto}" } @elementos;
+  } elsif ($titulo eq "Ejemplo_Patron_Gramatical") {
+    map { push @salida_arr, "$$_{id_ejemplo_patron_gramatical}\t$$_{id_patron_gramatical}\t$$_{ejemplo_patron_gramatical}" } @elementos;
   }
 
   #crear_tabla("Observacion", @observacion);
   #crear_tabla("Subcontexto", @subcontexto);
-  #crear_tabla("Ejemplo_Espaniol", @ejemplo_esp);
-  #crear_tabla("Ejemplo_Frances", @ejemplo_fra);
 
   my $salida = join "\n", @salida_arr;
   my $filename = join ".", ($titulo, "txt");
