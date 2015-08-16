@@ -37,7 +37,6 @@ my @unneddedColors = ("#D7D7D7", "#004000", "#9FB99F", "#A0B7A0",
 
 my @entrada_textual  = ();
 my @pronunciacion    = ();
-my @observacion      = ();
 my @etiqueta         = ();
 my @entrada_etiqueta = ();
 my @subcontexto      = ();
@@ -98,8 +97,6 @@ sub main{
   crear_tabla("Patron_Gramatical", @patron_grama);
   crear_tabla("Ejemplo_Contexto", @ejemplo_contexto);
   crear_tabla("Ejemplo_Patron_Gramatical", @ejemplo_patron);
-  #crear_tabla("Observacion", @observacion);
-  #crear_tabla("Subcontexto", @subcontexto);
 }
 
 sub process_html{
@@ -127,6 +124,7 @@ sub process_html{
   @htmlContentArr = reparar_parentesis(\@htmlContentArr);
   @htmlContentArr = alinear_parentesis(\@htmlContentArr);
   @htmlContentArr = alinear_diamantes(\@htmlContentArr);
+  @htmlContentArr = eliminar_saltos_de_linea_verdes(\@htmlContentArr);
 
   #Decodificar los HTML a UTF8
 
@@ -592,6 +590,44 @@ sub alinear_diamantes{
   return @htmlContentArr_ref;
 }
 
+sub eliminar_saltos_de_linea_verdes {
+
+  my ($htmlContentArr) = @_;
+  my @htmlContentArr_ref   =  @{$htmlContentArr};
+  my @linesToConsider = ();
+
+  for my $i (0..$#htmlContentArr_ref) {
+    if ((index($htmlContentArr_ref[$i], "#008000") != -1) and ($htmlContentArr_ref[$i+1] =~ /\(\s*(AM|fig|fam)\s*\)/) and ($htmlContentArr_ref[$i-1] =~ /div/) and ($htmlContentArr_ref[$i-2] =~ /\/div/)) {
+      push @linesToConsider, $i-2;;
+    }
+    #if ((index($htmlContentArr_ref[$i], "#008000") != -1) and (index($htmlContentArr_ref[$i-5], "color:#0000FF;")) and ($htmlContentArr_ref[$i-1] =~ /div/) and ($htmlContentArr_ref[$i-2] =~ /\/div/)) {
+      #push @linesToConsider, $i-2;;
+    #}
+  }
+
+  for my $i (0..$#linesToConsider) {
+    my $line = $linesToConsider[$i]-(2*$i);
+    splice @htmlContentArr_ref, $line, 2;
+  }
+  @linesToConsider = ();
+  #for my $i (0..$#htmlContentArr_ref) {
+    #if ((index($htmlContentArr_ref[$i], "#008000") != -1) and (index($htmlContentArr_ref[$i-5], "color:#0000FF;")) and ($htmlContentArr_ref[$i-1] =~ /div/) and ($htmlContentArr_ref[$i-2] =~ /\/div/)) {
+      #push @linesToConsider, $i-2;;
+    #}
+  #}
+  #for my $i (0..$#linesToConsider) {
+    #my $line = $linesToConsider[$i]-(2*$i);
+    #splice @htmlContentArr_ref, $line, 2;
+  #}
+  return @htmlContentArr_ref;
+}
+
+################################################################################### 
+#FIN LIMPIEZA
+################################################################################### 
+#FUNCIONES AUXILIARES
+################################################################################### 
+
 #taken from http://perlmaven.com/trim
 sub ltrim { my $s = shift; $s =~ s/^\s+//;       return $s };
 sub rtrim { my $s = shift; $s =~ s/\s+$//;       return $s };
@@ -606,6 +642,12 @@ sub openFile{
 
   return $fileContent;
 }
+
+################################################################################### 
+#FIN FUNCIONES AUXILIARES
+################################################################################### 
+#RECONOCER ELEMENTOS EN LOS HTML
+################################################################################### 
 
 sub reconocer_pronunciacion{
   #=pod
@@ -848,7 +890,9 @@ sub reconocer_observacion{
   my ($texto) = @_;
   my @matches = ( $texto =~ /<font style=\"color:#CD4970;\">[\s]+[^<]+[\s]+<\/font>[\s]+<\/div>[\s]+<div>[\s]+<font style=\"font-weight:bold;\">([^<]+)<\/font>[\s]+<font>([^<]+)<\/font>[\s]+<font style=\"font-weight:bold;\">([^<]+)<\/font>[\s]+<font>([^<]+)/g );
   map { $_ = trim($_) } @matches;
-  @matches;
+  my $tam = $#matches;
+  my $obs = ($tam < 0)? "" : join(" ", @matches);
+  $obs;
 }
 
 
@@ -865,6 +909,7 @@ sub reconocer_entrada_textual{
   my @matches = ($texto =~ /<font style=\"font\-weight:bold;color:#0000FF;\">([^<]+)/ );
   map { $_ = trim($_) } @matches;
   my $entrada = shift @matches;
+  my $observacion = "";
 
   ##PRONUNCIACION
   reconocer_pronunciacion $id_entrada, $texto;
@@ -872,9 +917,11 @@ sub reconocer_entrada_textual{
   reconocer_palabra_compuesta $id_entrada, $texto;
   ##ETIQUETAS MORFOLOGICAS
   reconocer_etiqueta_morfologica $id_entrada, $texto;
+  ##OBSERVACION
+  #my $observacion = reconocer_observacion($texto);
 
 
-  push @entrada_textual, { "id_entrada" => $id_entrada, "entrada" => $entrada, "observacion" => "" } ;
+  push @entrada_textual, { "id_entrada" => $id_entrada, "entrada" => $entrada, "observacion" => $observacion } ;
   $id_entrada++;
 }
 
@@ -927,6 +974,10 @@ sub  reconocer_sub_contexto{
   map { $_ = trim($_) } @matches;
   @matches;
 }
+
+################################################################################### 
+#FIN RECONOCER ELEMENTOS DEL TEXTO
+################################################################################### 
 
 sub crear_tabla{
   my ($titulo, @elementos) = @_;
