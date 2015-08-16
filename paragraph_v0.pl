@@ -31,7 +31,8 @@ my @unneddedColors = ("#D7D7D7", "#004000", "#9FB99F", "#A0B7A0",
                       "#9CB89C", "#9FB69F", "#9B9BC5", "#A1B7A1",
                       "#9898D4", "#005400", "#A0BBA0", "#8686A3",
                       "#002900", "#A2B3A7", "#A8A8D3", "#A8A8D3",
-                      "#9EB99E", "#B8C9B8", "#9393DF"
+                      "#9EB99E", "#B8C9B8", "#9393DF", "#9DBD9D",
+                      "#9191CE"
                      );
 
 my @entrada_textual  = ();
