@@ -708,6 +708,7 @@ sub texto_de_patron_y_contexto {
 
   for my $i (0..$#texto_arr) {
     if ($texto_arr[$i] =~ /<font style=\"color:#008000;\">/) {
+      print "LINEA SIGUIENTE: $texto_arr[$i+1]\n";
       $c++;
       if ($c == $n) {
         while ((($i+1) < $#texto_arr) and not ($texto_arr[$i+1] =~ /<font style=\"color:#008000;\">/g)) {
@@ -753,6 +754,8 @@ sub reconocer_contexto{
 
   my ($idf_etiqueta, $texto, @matches) = @_;
   my $tipo = "contexto";
+  print "ID ENTRADA_ETIQUETA: $idf_etiqueta en $tipo\n";
+  print "matches : @matches\n\n";
   #NO INSERTAR CONTEXTOS QUE YA ESTEN
   my @ids = ();
   my $match = undef;
@@ -786,6 +789,8 @@ sub reconocer_patron {
   #=cut
   my ($idf_etiqueta, $texto, @matches) = @_;
   my $tipo = "patron";
+  print "ID ENTRADA_ETIQUETA: $idf_etiqueta en $tipo\n";
+  print "matches : @matches\n\n";
   #NO INSERTAR CONTEXTOS QUE YA ESTEN
   my @ids = ();
   my $match = undef;
@@ -811,6 +816,7 @@ sub reconocer_patron {
 sub reconocer_contexto_y_patron {
 
   my ($idf_etiqueta, $texto) = @_;
+  print "ID ETIQUETA: $idf_etiqueta\n";
 
   my @matches = ( $texto =~ /\<div>[\n ]+<font style=\"color:#008000;\">([^<]+)/g );
   map { $_ = trim ($_) } @matches;
