@@ -701,7 +701,8 @@ sub texto_de_etiqueta {
 
 #RECONOCER EL TEXTO DE UN CONTEXTO O PATRON
 sub texto_de_patron_y_contexto {
-  my ($n, $texto, @matches) = @_;
+  my ($n, $texto, $joined_matches, @indexes_arr) = @_;
+  my @matches = split "\n", $joined_matches;
   my @texto_arr = split '\n', $texto;
   my @lineas = ();
   my $c = -1;
@@ -709,7 +710,7 @@ sub texto_de_patron_y_contexto {
   for my $i (0..$#texto_arr) {
     if ($texto_arr[$i] =~ /<font style=\"color:#008000;\">/) {
       $c++;
-      if ($c == $n) {
+      if (($c == $n) and ($c ~~ @indexes_arr)) {
         while ((($i+1) < $#texto_arr) and not ($texto_arr[$i+1] =~ /<font style=\"color:#008000;\">/g)) {
           push @lineas, $texto_arr[$i+1];
           $i++;
@@ -751,7 +752,8 @@ sub reconocer_contexto{
   #<font style=\"font style="color:#008000;\">[\s]+([\(a-zA-Zàáäâéèëêíìïîóòöôúùüû\)]+)[\s]+<\/font>[^\)]/ 
   #=cut
 
-  my ($idf_etiqueta, $texto, @matches) = @_;
+  my ($idf_etiqueta, $texto, $joined_matches, @contextos_arr) = @_;
+  my @matches = split "\n", $joined_matches;
   my $tipo = "contexto";
   #NO INSERTAR CONTEXTOS QUE YA ESTEN
   my @ids = ();
@@ -762,11 +764,11 @@ sub reconocer_contexto{
     @res = grep { $$_{contexto} eq $matches[$i] } @contexto;
     if ($#res >= 0) {
       $match = shift @res;
-      reconocer_ejemplo $tipo, $$match{id_contexto}, texto_de_patron_y_contexto($i, $texto, @matches);
+      reconocer_ejemplo $tipo, $$match{id_contexto}, texto_de_patron_y_contexto($i, $texto, $joined_matches, @contextos_arr);
       push @ids, $i;
     } else {
       push @contexto, { "id_contexto" => $id_contexto, "id_entrada_etiqueta" => $idf_etiqueta,  "contexto" => $matches[$i] };
-      reconocer_ejemplo $tipo, $id_contexto, texto_de_patron_y_contexto($i, $texto, @matches);
+      reconocer_ejemplo $tipo, $id_contexto, texto_de_patron_y_contexto($i, $texto, $joined_matches, @contextos_arr);
       $id_contexto++;
     }
     $match = undef;
@@ -784,7 +786,8 @@ sub reconocer_patron {
   #=pod 
   #<font style=\"font style="color:#008000;\">[\s]+([\(a-zA-Zàáäâéèëêíìïîóòöôúùüû\)]+)[\s]+<\/font>[^\)]/ 
   #=cut
-  my ($idf_etiqueta, $texto, @matches) = @_;
+  my ($idf_etiqueta, $texto, $joined_matches, @patrones_arr) = @_;
+  my @matches = split "\n", $joined_matches;
   my $tipo = "patron";
   #NO INSERTAR CONTEXTOS QUE YA ESTEN
   my @ids = ();
@@ -795,11 +798,11 @@ sub reconocer_patron {
     @res = grep { $$_{patron_gramatical} eq $matches[$i] } @patron_grama;
     if ($#res >= 0) {
       $match = shift @res;
-      reconocer_ejemplo $tipo, $$match{id_patron_gramatical}, texto_de_patron_y_contexto($i, $texto, @matches);
+      reconocer_ejemplo $tipo, $$match{id_patron_gramatical}, texto_de_patron_y_contexto($i, $texto, $joined_matches, @patrones_arr);
       push @ids, $i;
     } else {
       push @patron_grama, { "id_patron_gramatical" => $id_patron_gramatical, "id_entrada_etiqueta" => $idf_etiqueta,  "patron_gramatical" => $matches[$i] };
-      reconocer_ejemplo $tipo, $id_patron_gramatical, texto_de_patron_y_contexto($i, $texto, @matches);
+      reconocer_ejemplo $tipo, $id_patron_gramatical, texto_de_patron_y_contexto($i, $texto, $joined_matches, @patrones_arr);
       $id_patron_gramatical++;
     }
     $match = undef;
@@ -811,14 +814,25 @@ sub reconocer_patron {
 sub reconocer_contexto_y_patron {
 
   my ($idf_etiqueta, $texto) = @_;
+  my @contextos_arr = ();
+  my @patrones_arr = ();
+  my @contexto_temp = ();
+  my @patron_grama_temp = ();
 
   my @matches = ( $texto =~ /\<div>[\n ]+<font style=\"color:#008000;\">([^<]+)/g );
   map { $_ = trim ($_) } @matches;
 
-  my @contexto_temp        = grep { not ($_ =~ /\+/) } @matches;
-  reconocer_contexto $idf_etiqueta, $texto, @contexto_temp;
-  my @patron_grama_temp    = grep { $_ =~ /\+/ } @matches;
-  reconocer_patron $idf_etiqueta, $texto, @patron_grama_temp;
+  for my $i (0..$#matches) {
+    if ($matches[$i] =~ /\+/ ) {
+      push @patron_grama_temp, $matches[$i];
+      push @patrones_arr, $i;
+    } else {
+      push @contexto_temp, $matches[$i];
+      push @contextos_arr, $i;
+    }
+  }
+  reconocer_contexto $idf_etiqueta, $texto, join("\n", @contexto_temp), @contextos_arr;
+  reconocer_patron $idf_etiqueta, $texto, join("\n", @patron_grama_temp), @patrones_arr;
 
 }
 
