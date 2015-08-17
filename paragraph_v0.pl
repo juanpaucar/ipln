@@ -126,9 +126,6 @@ sub process_html{
   @htmlContentArr = alinear_diamantes(\@htmlContentArr);
   @htmlContentArr = eliminar_saltos_de_linea_verdes(\@htmlContentArr);
 
-  #Decodificar los HTML a UTF8
-  map { $_ = decode_entities($_) } @htmlContentArr;
-
   #Crear un Archivo con el HTML formateado
   my $nuevo_html = join("/", ("salida", $htmlFileName));
   my $texto = join("\n", @htmlContentArr); 
@@ -136,7 +133,8 @@ sub process_html{
   print OUT_HTML $texto;
   close(OUT_HTML);
 
- 
+  #Decodificar los HTML a UTF8
+  map { $_ = decode_entities($_) } @htmlContentArr;
   $texto = join("\n", @htmlContentArr); 
 
   reconocer_entrada_textual($texto);
