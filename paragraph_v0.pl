@@ -846,14 +846,14 @@ sub reconocer_etiqueta_morfologica{
     if ($#res >= 0) {
       $match = shift @res;
       push @entrada_etiqueta, { "id_entrada_etiqueta" => $id_entrada_etiqueta, "id_entrada" => $idf_entrada, "id_etiqueta" => $$match{id_etiqueta} };
-      $id_entrada_etiqueta++;
       push @ids, $i;
     } else {
       push @etiqueta, { "id_etiqueta" => $id_etiqueta, "etiqueta" => $matches[$i] };
       push @entrada_etiqueta, { "id_entrada_etiqueta" => $id_entrada_etiqueta, "id_entrada" => $idf_entrada, "id_etiqueta" => $id_etiqueta };
-      $id_etiqueta++; $id_entrada_etiqueta++;
+      $id_etiqueta++;
     }
     reconocer_contexto_y_patron $id_entrada_etiqueta, texto_de_etiqueta($i, $texto, @matches);
+    $id_entrada_etiqueta++;
     #RECONOCEMOS CONTEXTOS Y PATRON
     $match = undef;
     @res = ();
