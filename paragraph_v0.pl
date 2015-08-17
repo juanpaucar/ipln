@@ -689,7 +689,7 @@ sub texto_de_etiqueta {
     if ($texto_arr[$i] =~ /<font style=\"font-weight:bold;color:#800040;\">/) {
       $c++;
       if ($c == $n) {
-        while ((($i+1) < $#texto_arr) and not ($texto_arr[$i+1] =~ /<font style=\"font-weight:bold;color:#800040;\">([^<]+)/g ) ) {
+        while ((($i+1) < $#texto_arr) and not ($texto_arr[$i+1] =~ /<font style=\"font-weight:bold;color:#800040;\">/g ) ) {
           push @lineas, $texto_arr[$i+1];
           $i++;
         }
@@ -703,17 +703,21 @@ sub texto_de_etiqueta {
 
 #RECONOCER EL TEXTO DE UN CONTEXTO O PATRON
 sub texto_de_patron_y_contexto {
-  my ($palabra, $texto) = @_;
+  my ($n, $texto, @matches) = @_;
   my @texto_arr = split '\n', $texto;
   my @lineas = ();
+  my $c = -1;
 
   for my $i (0..$#texto_arr) {
-    if (index ($texto_arr[$i], $palabra) != -1) {
-      while ((($i+1) < $#texto_arr) and not ($texto_arr[$i+1] =~ /<font style=\"color:#008000;\">([^<]+)/g)) {
-        push @lineas, $texto_arr[$i+1];
-        $i++;
+    if ($texto_arr[$i] =~ /<font style=\"color:#008000;\">/) {
+      $c++;
+      if ($c == $n) {
+        while ((($i+1) < $#texto_arr) and not ($texto_arr[$i+1] =~ /<font style=\"color:#008000;\">/g)) {
+          push @lineas, $texto_arr[$i+1];
+          $i++;
+        }
+        last;
       }
-      last;
     }
   }
   #RECONOCER EJEMPLO DE UN CONTEXTO O DE UN PATRON
@@ -760,23 +764,16 @@ sub reconocer_contexto{
     @res = grep { $$_{contexto} eq $matches[$i] } @contexto;
     if ($#res >= 0) {
       $match = shift @res;
-      reconocer_ejemplo $texto, $$match{id_contexto}, texto_de_patron_y_contexto($matches[$i], $texto);
+      reconocer_ejemplo $tipo, $$match{id_contexto}, texto_de_patron_y_contexto($i, $texto, @matches);
       push @ids, $i;
+    } else {
+      push @contexto, { "id_contexto" => $id_contexto, "id_entrada_etiqueta" => $idf_etiqueta,  "contexto" => $matches[$i] };
+      reconocer_ejemplo $tipo, $id_contexto, texto_de_patron_y_contexto($i, $texto, @matches);
+      $id_contexto++;
     }
     $match = undef;
     @res = ();
   }
-
-  #REMOVEMOS A ESOS CONTEXTOS DEL ARREGLO
-  my $line = 0;
-  for my $i (0..$#ids) {
-    $line = $ids[$i] - $i;
-    splice @matches, $line, 1;
-  }
-  #INSERTAMOS EL ARREGLO DE CONTEXTOS
-  map { push @contexto, { "id_contexto" => $id_contexto, "id_entrada_etiqueta" => $idf_etiqueta,  "contexto" => $_ };
-        reconocer_ejemplo $tipo, $id_contexto, texto_de_patron_y_contexto($_, $texto);
-        $id_contexto++ } @matches;
 }
 
 sub reconocer_patron {
@@ -800,22 +797,16 @@ sub reconocer_patron {
     @res = grep { $$_{patron_gramatical} eq $matches[$i] } @patron_grama;
     if ($#res >= 0) {
       $match = shift @res;
-      reconocer_ejemplo $tipo, $$match{id_patron_gramatical}, texto_de_patron_y_contexto($matches[$i], $texto);
+      reconocer_ejemplo $tipo, $$match{id_patron_gramatical}, texto_de_patron_y_contexto($i, $texto, @matches);
       push @ids, $i;
+    } else {
+      push @patron_grama, { "id_patron_gramatical" => $id_patron_gramatical, "id_entrada_etiqueta" => $idf_etiqueta,  "patron_gramatical" => $matches[$i] };
+      reconocer_ejemplo $tipo, $id_patron_gramatical, texto_de_patron_y_contexto($i, $texto, @matches);
+      $id_patron_gramatical++;
     }
     $match = undef;
     @res = ();
   }
-  #REMOVEMOS A ESOS CONTEXTOS DEL ARREGLO
-  my $line = 0;
-  for my $i (0..$#ids) {
-    $line = $ids[$i] - $i;
-    splice @matches, $line, 1;
-  }
-  #INSERTAMOS EL ARREGLO DE CONTEXTOS
-  map { push @patron_grama, { "id_patron_gramatical" => $id_patron_gramatical, "id_entrada_etiqueta" => $idf_etiqueta,  "patron_gramatical" => $_ };
-        reconocer_ejemplo $tipo, $id_patron_gramatical, texto_de_patron_y_contexto($_, $texto);
-        $id_patron_gramatical++ } @matches;
 }
 
 #RECONOCER PATRON y CONTEXTO
@@ -864,8 +855,8 @@ sub reconocer_etiqueta_morfologica{
       push @entrada_etiqueta, { "id_entrada_etiqueta" => $id_entrada_etiqueta, "id_entrada" => $idf_entrada, "id_etiqueta" => $id_etiqueta };
       $id_etiqueta++; $id_entrada_etiqueta++;
     }
-    #RECONOCEMOS CONTEXTOS Y PATRON
     reconocer_contexto_y_patron $id_entrada_etiqueta, texto_de_etiqueta($i, $texto, @matches);
+    #RECONOCEMOS CONTEXTOS Y PATRON
     $match = undef;
     @res = ();
   }
