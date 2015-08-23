@@ -106,6 +106,8 @@ sub process_html{
   my $total_path = join("/", ($directory, $htmlFileName));
   my $htmlContent = openFile($total_path);
   $htmlContent =~ s/&nbsp;/ /g;
+  $htmlContent =~ s/(<font style="color:#008000;">[\s]+[^>]+)<\/font>[\s]+(?:<font style=\"(?:font-weight:bold;)?color:(?:#D7D7D7;|#9CB89C;|#9CB89C;)\">[\s]+((?:(?!<\/font>).)*)[\s]+<\/font>[\s]+)<font style="color:#008000;">/$1$2/g;
+  $htmlContent =~ s/(<\/p>[\s]+<p>[\s]+)?((?:<font style=\"(?:font-weight:bold;)?color:(?:#D7D7D7;|#9CB89C;|#9CB89C;)\">[\s]+[a-z0-9][\s]+<\/font>[\s]+)+<font style="color:#008000;">)/<\/p>\n   <p>\n    $2/g;
   my @htmlContentArr = split('\n', $htmlContent); 
 
   #Formatear lo mas correctamente posible el HTML
@@ -169,7 +171,8 @@ sub remove_paragraph{
 sub insert_paragraph{
   my ($htmlContentArr) = @_;
   my @htmlContentArr_ref   =  @{$htmlContentArr};
-  my @colorsToAdd = ("#0000FF", "#008000");
+  my @colorsToAdd = ("#0000FF");
+  #my @colorsToAdd = ("#0000FF", "#008000");
   my @linesToConsider = ();
 
   #Busco las secciones con los colores que se necesitan
@@ -732,13 +735,18 @@ sub reconocer_ejemplo {
 
   my @ejemplos = (@ejemplos_temp_fr, @ejemplos_temp_esp);
 
-  if ($tipo eq "contexto") {
-    map { push @ejemplo_contexto, { "id_ejemplo_contexto" => $id_ejemplo_contexto, "id_contexto" => $idf_poc, "ejemplo_contexto" => $_ };
-    $id_ejemplo_contexto++; } @ejemplos;
-  } else {
-    map { push @ejemplo_patron, { "id_ejemplo_patron_gramatical" => $id_ejemplo_patron_gramatical, "id_patron_gramatical" => $idf_poc, "ejemplo_patron_gramatical" => $_ };
-    $id_ejemplo_patron_gramatical++;} @ejemplos;
-  }
+  
+    for my $i (0..$#ejemplos_temp_fr) {
+      if ($tipo eq "contexto") {
+        push @ejemplo_contexto, { "id_ejemplo_contexto" => $id_ejemplo_contexto, "id_contexto" => $idf_poc, "ejemplo_fra" => $ejemplos_temp_fr[$i], "ejemplo_esp" => $ejemplos_temp_esp[$i] };
+        $id_ejemplo_contexto++;    
+      } else {
+        push @ejemplo_patron, { "id_ejemplo_patron_gramatical" => $id_ejemplo_patron_gramatical, "id_patron_gramatical" => $idf_poc, "ejemplo_fra" => $ejemplos_temp_fr[$i], "ejemplo_esp"  => $ejemplos_temp_esp[$i] };
+        $id_ejemplo_patron_gramatical++;
+      }
+
+    }
+    
 }
 
 sub reconocer_contexto{
@@ -999,9 +1007,9 @@ sub crear_tabla{
   } elsif ($titulo eq "Contexto") {
     map { push @salida_arr, "$$_{id_contexto}\t$$_{id_entrada_etiqueta}\t$$_{contexto}" } @elementos;
   } elsif ($titulo eq "Ejemplo_Contexto") {
-    map { push @salida_arr, "$$_{id_ejemplo_contexto}\t$$_{id_contexto}\t$$_{ejemplo_contexto}" } @elementos;
+    map { push @salida_arr, "$$_{id_ejemplo_contexto}\t$$_{id_contexto}\t$$_{ejemplo_esp}\t$$_{ejemplo_fra}" } @elementos;
   } elsif ($titulo eq "Ejemplo_Patron_Gramatical") {
-    map { push @salida_arr, "$$_{id_ejemplo_patron_gramatical}\t$$_{id_patron_gramatical}\t$$_{ejemplo_patron_gramatical}" } @elementos;
+    map { push @salida_arr, "$$_{id_ejemplo_patron_gramatical}\t$$_{id_patron_gramatical}\t$$_{ejemplo_esp}\t$$_{ejemplo_fra}" } @elementos;
   }
 
   #crear_tabla("Observacion", @observacion);
