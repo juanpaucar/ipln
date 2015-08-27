@@ -131,7 +131,7 @@ sub process_html{
   #Crear un Archivo con el HTML formateado
   my $nuevo_html = join("/", ("salida", $htmlFileName));
   my $texto = join("\n", @htmlContentArr); 
-  open(OUT_HTML, ">", $nuevo_html);
+  open(OUT_HTML, ">:utf8", $nuevo_html);
   print OUT_HTML $texto;
   close(OUT_HTML);
 
